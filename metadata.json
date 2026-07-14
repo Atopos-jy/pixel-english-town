@@ -1,0 +1,5 @@
+{
+  "name": "Daily English Reader",
+  "description": "A daily English reading application with audio support, progress tracking, and gamification elements.",
+  "requestFramePermissions": []
+}

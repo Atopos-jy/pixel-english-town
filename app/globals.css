@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 优化英文阅读字体 */
+.font-serif {
+  font-family: var(--font-serif), Georgia, var(--font-noto-sans-sc), serif;
+  letter-spacing: 0.01em;
+  line-height: 1.75;
+}
+
+/* 针对英文段落的额外优化 */
+.prose {
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in-up { animation: fadeInUp .35s ease-out both; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}

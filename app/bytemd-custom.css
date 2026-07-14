@@ -1,0 +1,215 @@
+/* 隐藏 ByteMD 编辑器中的代码和代码块按钮 */
+
+
+
+/* 修复 ByteMD 编辑器预览区域的 Markdown 渲染 */
+.bytemd-preview .markdown-body h1,
+.bytemd-preview .markdown-body h2,
+.bytemd-preview .markdown-body h3,
+.bytemd-preview .markdown-body h4,
+.bytemd-preview .markdown-body h5,
+.bytemd-preview .markdown-body h6 {
+  margin-top: 1.5em !important;
+  margin-bottom: 0.5em !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.bytemd-preview .markdown-body h1 {
+  font-size: 2em !important;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.bytemd-preview .markdown-body h2 {
+  font-size: 1.5em !important;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.bytemd-preview .markdown-body h3 {
+  font-size: 1.25em !important;
+}
+
+.bytemd-preview .markdown-body h4 {
+  font-size: 1.1em !important;
+}
+
+.bytemd-preview .markdown-body h5 {
+  font-size: 1em !important;
+}
+
+.bytemd-preview .markdown-body h6 {
+  font-size: 0.9em !important;
+}
+
+.bytemd-preview .markdown-body ul,
+.bytemd-preview .markdown-body ol {
+  padding-left: 2em !important;
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
+  list-style: revert !important;
+}
+
+.bytemd-preview .markdown-body ul {
+  list-style-type: disc !important;
+}
+
+.bytemd-preview .markdown-body ol {
+  list-style-type: decimal !important;
+}
+
+.bytemd-preview .markdown-body li {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+  display: list-item !important;
+}
+
+.bytemd-preview .markdown-body p {
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
+}
+
+.bytemd-preview .markdown-body strong {
+  font-weight: 700 !important;
+}
+
+.bytemd-preview .markdown-body em {
+  font-style: italic !important;
+}
+
+.bytemd-preview .markdown-body a {
+  color: #0969da !important;
+  text-decoration: underline !important;
+}
+
+.bytemd-preview .markdown-body code {
+  background-color: rgba(175, 184, 193, 0.2) !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 6px !important;
+  font-size: 85% !important;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;
+}
+
+.bytemd-preview .markdown-body blockquote {
+  padding-left: 1em !important;
+  border-left: 0.25em solid #d0d7de !important;
+  color: #656d76 !important;
+  margin: 1em 0 !important;
+}
+
+/* 确保 Markdown 内容正确渲染 - 使用!important覆盖Tailwind reset */
+.bytemd-viewer .markdown-body {
+  font-size: 1.125rem !important; /* 18px - 更大的基础字号 */
+  line-height: 1.8 !important; /* 更舒适的行高 */
+  font-weight: 450 !important; /* 稍粗字重，提升可读性 */
+}
+
+.bytemd-viewer .markdown-body h1,
+.bytemd-viewer .markdown-body h2,
+.bytemd-viewer .markdown-body h3,
+.bytemd-viewer .markdown-body h4,
+.bytemd-viewer .markdown-body h5,
+.bytemd-viewer .markdown-body h6 {
+  margin-top: 1.5em !important;
+  margin-bottom: 0.5em !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.bytemd-viewer .markdown-body h1 {
+  font-size: 2em !important;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.bytemd-viewer .markdown-body h2 {
+  font-size: 1.5em !important;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.bytemd-viewer .markdown-body h3 {
+  font-size: 1.25em !important;
+}
+
+.bytemd-viewer .markdown-body h4 {
+  font-size: 1.1em !important;
+}
+
+.bytemd-viewer .markdown-body h5 {
+  font-size: 1em !important;
+}
+
+.bytemd-viewer .markdown-body h6 {
+  font-size: 0.9em !important;
+}
+
+.bytemd-viewer .markdown-body ul,
+.bytemd-viewer .markdown-body ol {
+  padding-left: 2em !important;
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
+  list-style: revert !important;
+}
+
+.bytemd-viewer .markdown-body ul {
+  list-style-type: disc !important;
+}
+
+.bytemd-viewer .markdown-body ol {
+  list-style-type: decimal !important;
+}
+
+.bytemd-viewer .markdown-body li {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+  display: list-item !important;
+}
+
+.bytemd-viewer .markdown-body p {
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
+  font-size: 1.125rem !important; /* 18px */
+  font-weight: 450 !important; /* 稍微加粗，提升可读性 */
+}
+
+/* 高亮段落内的段落间距更紧凑 */
+.bytemd-viewer.bg-yellow-100 .markdown-body p {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+}
+
+.bytemd-viewer .markdown-body strong {
+  font-weight: 700 !important;
+}
+
+.bytemd-viewer .markdown-body em {
+  font-style: italic !important;
+}
+
+.bytemd-viewer .markdown-body a {
+  color: #0969da !important;
+  text-decoration: underline !important;
+}
+
+.bytemd-viewer .markdown-body code {
+  background-color: rgba(175, 184, 193, 0.2) !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 6px !important;
+  font-size: 85% !important;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;
+}
+
+.bytemd-viewer .markdown-body blockquote {
+  padding-left: 1em !important;
+  border-left: 0.25em solid #d0d7de !important;
+  color: #656d76 !important;
+  margin: 1em 0 !important;
+}
+.bytemd .bytemd-toolbar-right > .bytemd-toolbar-icon:nth-child(4){
+  display: none !important;
+}
+.bytemd .bytemd-toolbar-left > .bytemd-toolbar-icon:nth-child(7){
+  display: none !important;
+}
