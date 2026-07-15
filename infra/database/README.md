@@ -1,6 +1,6 @@
 # 共享开发数据库
 
-此目录只部署一套 MySQL 8.4 开发库：`pixel_town_dev`。MySQL 仅绑定服务器本机 `127.0.0.1:3306`，开发机必须通过 SSH 隧道连接。
+此目录只部署一套 MySQL 8.4 数据库：`pixel_town`。MySQL 仅绑定服务器本机 `127.0.0.1:3306`，开发机必须通过 SSH 隧道连接。
 
 ## 服务器初始化
 
@@ -24,7 +24,7 @@ ssh -N -L 13306:127.0.0.1:3306 root@120.26.133.223
 本地项目 `.env`：
 
 ```env
-DATABASE_URL="mysql://pixel_dev:YOUR_PASSWORD@127.0.0.1:13306/pixel_town_dev"
+DATABASE_URL="mysql://pixel_town:YOUR_PASSWORD@127.0.0.1:13306/pixel_town"
 ```
 
 然后从本地项目根目录执行：
