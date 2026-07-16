@@ -33,7 +33,7 @@ export function TownMap({ onOpenPlaza }: { onOpenPlaza: () => void }) {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#73c6f1]">
-      <img src="/images/map/terrain-background-v1.png" alt="像素英语小镇草地与道路地图" className="absolute inset-0 h-full w-full object-cover object-center" />
+      <img src="/images/map/terrain-background-v2.png" alt="像素英语小镇草地与道路地图" draggable={false} className="absolute inset-0 h-full w-full object-fill [image-rendering:pixelated]" />
       {buildings.map((building) => (
         <button
           key={building.id}
