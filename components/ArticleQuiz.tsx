@@ -2,18 +2,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { QuizQuestion, QuizResult, Difficulty } from '../types';
+import type { AiConfiguration } from '@/lib/ai/types';
 import { CheckCircle2, XCircle, RotateCcw, Trophy, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface ArticleQuizProps {
   articleText: string;
   difficulty: Difficulty;
+  aiConfiguration: AiConfiguration;
   onClose: () => void;
   onActivityChange?: (isActive: boolean) => void;
 }
 
 type QuizPhase = 'idle' | 'loading' | 'answering' | 'finished';
 
-export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficulty, onClose, onActivityChange }) => {
+export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficulty, aiConfiguration, onClose, onActivityChange }) => {
   const [phase, setPhase] = useState<QuizPhase>('idle');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [results, setResults] = useState<QuizResult[]>([]);
@@ -45,7 +47,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
       const res = await fetch('/api/quiz/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ articleText, difficulty }),
+        body: JSON.stringify({ articleText, difficulty, configuration: aiConfiguration }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '生成失败');

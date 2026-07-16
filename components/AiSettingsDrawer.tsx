@@ -15,7 +15,7 @@ interface AiSettingsDrawerProps {
   initialSettings: AiSettingsDraft;
   onClose: () => void;
   onSaveDraft: (settings: AiSettingsDraft) => void;
-  onRequestTest: () => void;
+  onRequestTest: (settings: AiSettingsDraft) => void;
 }
 
 const providerOptions: Record<AiProvider, Array<{ value: string; label: string }>> = {
@@ -102,16 +102,16 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
             >
               {providerOptions[settings.provider].map((model) => <option key={model.value} value={model.value}>{model.label}</option>)}
             </select>
-            <p className="mt-2 text-xs leading-5 text-slate-500">第 5 步将从厂商接口刷新模型列表，替换这里的初始选项。</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">当前可选模型已由服务端校验；新增厂商或模型时只需扩展适配层。</p>
           </label>
 
           <div className="border-l-4 border-amber-500 bg-[#fff4cc] p-3 text-xs leading-5 text-slate-700">
-            当前阶段不会将 Key 写入浏览器或数据库；关闭页面后，这份临时配置会消失。
+            点击测试或出题时，Key 只会随当前请求发送给所选厂商，不写入浏览器或数据库；第 6 步将加入加密保存。
           </div>
         </div>
 
         <footer className="grid grid-cols-2 gap-3 border-t-2 border-slate-800 bg-[#fffdf4] p-5">
-          <button type="button" onClick={onRequestTest} disabled={!settings.apiKey.trim()} className="border-2 border-emerald-800 bg-[#e2f3d0] px-3 py-3 text-sm font-black text-emerald-950 transition hover:bg-[#cfeab5] disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={() => onRequestTest({ ...settings, apiKey: settings.apiKey.trim() })} disabled={!settings.apiKey.trim()} className="border-2 border-emerald-800 bg-[#e2f3d0] px-3 py-3 text-sm font-black text-emerald-950 transition hover:bg-[#cfeab5] disabled:cursor-not-allowed disabled:opacity-50">
             测试连接
           </button>
           <button type="button" onClick={saveDraft} disabled={!settings.apiKey.trim()} className="flex items-center justify-center gap-1.5 border-2 border-slate-800 bg-amber-300 px-3 py-3 text-sm font-black text-slate-900 shadow-[3px_3px_0_#7c2d12] transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50">

@@ -126,6 +126,7 @@ export default function LearnPage() {
       {isQuizOpen && (
         <QuizDrawer
           article={article}
+          aiConfiguration={aiSettingsDraft}
           onRequestClose={requestCloseQuiz}
           onActivityChange={setIsQuizActive}
         />
@@ -139,7 +140,20 @@ export default function LearnPage() {
             setAiSettingsDraft(settings);
             setNotice(`${settings.provider === 'deepseek' ? 'DeepSeek' : 'MiMo'} 配置已暂存到当前页面。`);
           }}
-          onRequestTest={() => setNotice('连接测试将在第 5 步接入厂商 API 后启用。')}
+          onRequestTest={async (settings) => {
+            setNotice('正在测试 AI 连接…');
+            try {
+              const response = await fetch('/api/ai/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ configuration: settings }),
+              });
+              const data = await response.json();
+              setNotice(response.ok ? 'AI 连接成功，可以开始测验。' : (data.error || 'AI 连接失败。'));
+            } catch {
+              setNotice('无法连接到 AI 服务，请检查网络后重试。');
+            }
+          }}
         />
       )}
 
