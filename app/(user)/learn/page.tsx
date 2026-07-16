@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { BookOpen, Check } from 'lucide-react';
 import { ArticleReader } from '@/components/ArticleReader';
+import { QuizDrawer } from '@/components/QuizDrawer';
 import { Loading } from '@/components/Loading';
 import { getArticles, markArticleComplete } from '@/services/storageService';
 import { useProgress } from '@/contexts/ProgressContext';
@@ -16,6 +17,8 @@ export default function LearnPage() {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [isQuizActive, setIsQuizActive] = useState(false);
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -44,7 +47,19 @@ export default function LearnPage() {
     );
   };
 
+  const requestCloseQuiz = () => {
+    if (isQuizActive && !window.confirm('关闭后本次未完成的测验不会保存，确定关闭吗？')) {
+      return false;
+    }
+
+    setIsQuizOpen(false);
+    setIsQuizActive(false);
+    return true;
+  };
+
   const chooseArticle = (nextArticle: Article) => {
+    if (nextArticle.id === article.id) return;
+    if (isQuizOpen && !requestCloseQuiz()) return;
     setArticle(nextArticle);
   };
 
@@ -87,10 +102,18 @@ export default function LearnPage() {
             article={article}
             isCompleted={progress.completedArticleIds.includes(article.id)}
             onComplete={completeArticle}
-            onOpenQuiz={() => setNotice('阅读理解测验将在第 3 步改为右侧抽屉。')}
+            onOpenQuiz={() => setIsQuizOpen(true)}
           />
         </section>
       </div>
+
+      {isQuizOpen && (
+        <QuizDrawer
+          article={article}
+          onRequestClose={requestCloseQuiz}
+          onActivityChange={setIsQuizActive}
+        />
+      )}
 
       {notice && (
         <div className="fixed right-5 top-20 z-[60] border-2 border-slate-900 bg-amber-300 px-4 py-3 text-sm font-black text-slate-900 shadow-[4px_4px_0_#7c2d12]">
