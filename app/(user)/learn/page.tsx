@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { BookOpen, Check } from 'lucide-react';
 import { ArticleReader } from '@/components/ArticleReader';
+import { AiSettingsDrawer, AiSettingsDraft } from '@/components/AiSettingsDrawer';
 import { QuizDrawer } from '@/components/QuizDrawer';
 import { Loading } from '@/components/Loading';
 import { getArticles, markArticleComplete } from '@/services/storageService';
@@ -19,6 +20,12 @@ export default function LearnPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
+  const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
+  const [aiSettingsDraft, setAiSettingsDraft] = useState<AiSettingsDraft>({
+    provider: 'deepseek',
+    apiKey: '',
+    model: 'deepseek-v4-flash',
+  });
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -63,6 +70,14 @@ export default function LearnPage() {
     setArticle(nextArticle);
   };
 
+  const openQuiz = () => {
+    if (!aiSettingsDraft.apiKey) {
+      setIsAiSettingsOpen(true);
+      return;
+    }
+    setIsQuizOpen(true);
+  };
+
   return (
     <div className="min-h-full bg-[#e8f0d8] p-3 md:p-6">
       <div className="mx-auto grid max-w-[1500px] gap-5 xl:grid-cols-[270px_minmax(0,1fr)]">
@@ -102,7 +117,8 @@ export default function LearnPage() {
             article={article}
             isCompleted={progress.completedArticleIds.includes(article.id)}
             onComplete={completeArticle}
-            onOpenQuiz={() => setIsQuizOpen(true)}
+            onOpenQuiz={openQuiz}
+            onOpenAiSettings={() => setIsAiSettingsOpen(true)}
           />
         </section>
       </div>
@@ -112,6 +128,18 @@ export default function LearnPage() {
           article={article}
           onRequestClose={requestCloseQuiz}
           onActivityChange={setIsQuizActive}
+        />
+      )}
+
+      {isAiSettingsOpen && (
+        <AiSettingsDrawer
+          initialSettings={aiSettingsDraft}
+          onClose={() => setIsAiSettingsOpen(false)}
+          onSaveDraft={(settings) => {
+            setAiSettingsDraft(settings);
+            setNotice(`${settings.provider === 'deepseek' ? 'DeepSeek' : 'MiMo'} 配置已暂存到当前页面。`);
+          }}
+          onRequestTest={() => setNotice('连接测试将在第 5 步接入厂商 API 后启用。')}
         />
       )}
 

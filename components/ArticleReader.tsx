@@ -14,11 +14,12 @@ interface ArticleReaderProps {
   isCompleted: boolean;
   onComplete: () => void;
   onOpenQuiz?: () => void;
+  onOpenAiSettings?: () => void;
 }
 
 type ViewMode = 'en' | 'zh' | 'bilingual';
 
-export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isCompleted, onComplete, onOpenQuiz = () => {} }) => {
+export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isCompleted, onComplete, onOpenQuiz = () => {}, onOpenAiSettings = () => {} }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('en');
   const [currentAudioTime, setCurrentAudioTime] = useState(0);
@@ -425,8 +426,8 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
         <div className="flex items-center gap-2">
           <button
             type="button"
-            disabled
-            className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#f3eddc] px-3 py-2 text-xs font-black text-slate-500 opacity-60"
+            onClick={onOpenAiSettings}
+            className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#fff9e8] px-3 py-2 text-xs font-black text-slate-700 transition hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900"
           >
             <Settings size={15} />AI 设置
           </button>
