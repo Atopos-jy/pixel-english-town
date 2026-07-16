@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QuizQuestion, QuizResult, Difficulty } from '../types';
 import { CheckCircle2, XCircle, RotateCcw, Trophy, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
 
@@ -8,11 +8,12 @@ interface ArticleQuizProps {
   articleText: string;
   difficulty: Difficulty;
   onClose: () => void;
+  onActivityChange?: (isActive: boolean) => void;
 }
 
 type QuizPhase = 'idle' | 'loading' | 'answering' | 'finished';
 
-export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficulty, onClose }) => {
+export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficulty, onClose, onActivityChange }) => {
   const [phase, setPhase] = useState<QuizPhase>('idle');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [results, setResults] = useState<QuizResult[]>([]);
@@ -21,6 +22,10 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
   const [fillInput, setFillInput] = useState('');
   const [showExplanation, setShowExplanation] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    onActivityChange?.(phase === 'loading' || phase === 'answering');
+  }, [onActivityChange, phase]);
 
   const currentQuestion = questions[currentIdx];
   const totalCount = questions.length;
@@ -87,12 +92,12 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
   const scorePercent = totalCount > 0 ? Math.round((scoreCount / totalCount) * 100) : 0;
 
   const scoreColor =
-    scorePercent >= 80 ? 'text-green-600' :
-    scorePercent >= 60 ? 'text-yellow-600' : 'text-red-500';
+    scorePercent >= 80 ? 'text-emerald-800' :
+    scorePercent >= 60 ? 'text-amber-700' : 'text-[#9f3426]';
 
   const scoreBg =
-    scorePercent >= 80 ? 'bg-green-50 border-green-200' :
-    scorePercent >= 60 ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200';
+    scorePercent >= 80 ? 'bg-[#e2f3d0] border-emerald-700' :
+    scorePercent >= 60 ? 'bg-[#fff0ad] border-amber-600' : 'bg-[#ffe1d6] border-[#b94d3c]';
 
   const scoreMessage =
     scorePercent >= 80 ? '太棒了！理解得很透彻 🎉' :
@@ -110,14 +115,14 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
           </p>
         </div>
         {error && (
-          <div className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+          <div className="border-2 border-[#b94d3c] bg-[#ffe1d6] px-4 py-2 text-sm text-[#9f3426]">
             {error}
           </div>
         )}
         <button
           onClick={generateQuiz}
           disabled={phase === 'loading'}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all disabled:opacity-60 disabled:cursor-wait shadow-md"
+          className="flex items-center gap-2 border-2 border-slate-800 bg-amber-300 px-6 py-3 font-semibold text-slate-900 shadow-[3px_3px_0_#7c2d12] transition-all hover:bg-amber-400 disabled:cursor-wait disabled:opacity-60"
         >
           {phase === 'loading'
             ? <><Loader2 className="w-4 h-4 animate-spin" /> AI 出题中…</>
@@ -132,7 +137,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
     return (
       <div className="flex flex-col items-center py-10 gap-6">
         <Trophy className="w-12 h-12 text-yellow-500" />
-        <div className={`rounded-2xl border px-10 py-6 text-center ${scoreBg}`}>
+        <div className={`border-2 px-10 py-6 text-center ${scoreBg}`}>
           <div className={`text-5xl font-bold mb-1 ${scoreColor}`}>{scorePercent}%</div>
           <div className="text-slate-600 text-sm">{scoreCount} / {totalCount} 题正确</div>
           <div className="mt-3 text-slate-700 font-medium">{scoreMessage}</div>
@@ -143,7 +148,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
           {questions.map((q, idx) => {
             const r = results[idx];
             return (
-              <div key={idx} className={`rounded-xl border p-4 text-sm ${r?.correct ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div key={idx} className={`border-2 p-4 text-sm ${r?.correct ? 'border-emerald-700 bg-[#e2f3d0]' : 'border-[#b94d3c] bg-[#ffe1d6]'}`}>
                 <div className="flex items-start gap-2">
                   {r?.correct
                     ? <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
@@ -165,13 +170,13 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
         <div className="flex gap-3">
           <button
             onClick={generateQuiz}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-all"
+            className="flex items-center gap-1.5 border-2 border-emerald-800 bg-[#e2f3d0] px-4 py-2 text-sm font-medium text-emerald-900 transition-all hover:bg-[#cfeab5]"
           >
             <RotateCcw className="w-3.5 h-3.5" /> 重新出题
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-all"
+            className="border-2 border-slate-700 bg-[#fff9e8] px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-[#fff4cc]"
           >
             关闭测验
           </button>
@@ -188,17 +193,17 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
         <span>第 {currentIdx + 1} 题 / 共 {totalCount} 题</span>
         <span>{results.filter(r => r.correct).length} 题正确</span>
       </div>
-      <div className="w-full bg-slate-100 rounded-full h-1.5">
+      <div className="h-2 w-full border border-slate-800 bg-[#e8f0d8]">
         <div
-          className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500"
+          className="h-full bg-emerald-700 transition-all duration-500"
           style={{ width: `${((currentIdx) / totalCount) * 100}%` }}
         />
       </div>
 
       {/* 题目 */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+      <div className="border-2 border-slate-800 bg-[#fffdf4] p-5">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+          <span className="border border-amber-700 bg-[#fff0ad] px-2 py-0.5 text-xs font-semibold text-amber-950">
             {currentQuestion.type === 'multiple_choice' ? '单选题' :
              currentQuestion.type === 'true_false' ? '判断题' : '填空题'}
           </span>
@@ -213,13 +218,13 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
             const letter = opt.charAt(0); // "A" / "B" / "C" / "D"
             const isSelected = userAnswer === letter;
             const isCorrect = currentQuestion.answer.toUpperCase() === letter;
-            let cls = 'border rounded-xl px-4 py-3 text-sm text-left cursor-pointer transition-all font-medium ';
+            let cls = 'border-2 px-4 py-3 text-sm text-left cursor-pointer transition-all font-medium ';
             if (!isAnswered) {
-              cls += 'bg-white border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700';
+              cls += 'border-slate-500 bg-[#fff9e8] hover:border-amber-600 hover:bg-[#fff4cc] text-slate-700';
             } else if (isCorrect) {
-              cls += 'bg-green-50 border-green-400 text-green-700';
+              cls += 'border-emerald-700 bg-[#e2f3d0] text-emerald-900';
             } else if (isSelected) {
-              cls += 'bg-red-50 border-red-400 text-red-600';
+              cls += 'border-[#b94d3c] bg-[#ffe1d6] text-[#9f3426]';
             } else {
               cls += 'bg-white border-slate-200 text-slate-400';
             }
@@ -241,13 +246,13 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
             const label = val === 'true' ? '✅ 正确' : '❌ 错误';
             const isSelected = userAnswer === val;
             const isCorrect = currentQuestion.answer.toLowerCase() === val;
-            let cls = 'flex-1 border rounded-xl py-3 text-sm font-medium cursor-pointer transition-all ';
+            let cls = 'flex-1 border-2 py-3 text-sm font-medium cursor-pointer transition-all ';
             if (!isAnswered) {
-              cls += 'bg-white border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700';
+              cls += 'border-slate-500 bg-[#fff9e8] hover:border-amber-600 hover:bg-[#fff4cc] text-slate-700';
             } else if (isCorrect) {
-              cls += 'bg-green-50 border-green-400 text-green-700';
+              cls += 'border-emerald-700 bg-[#e2f3d0] text-emerald-900';
             } else if (isSelected) {
-              cls += 'bg-red-50 border-red-400 text-red-600';
+              cls += 'border-[#b94d3c] bg-[#ffe1d6] text-[#9f3426]';
             } else {
               cls += 'bg-white border-slate-200 text-slate-400';
             }
@@ -269,13 +274,13 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
             onKeyDown={(e) => { if (e.key === 'Enter' && fillInput.trim()) submitAnswer(fillInput.trim()); }}
             disabled={isAnswered}
             placeholder="输入你的答案…"
-            className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-500"
+            className="flex-1 border-2 border-slate-700 bg-[#fffdf4] px-4 py-3 text-sm focus:border-emerald-700 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500"
           />
           {!isAnswered && (
             <button
               onClick={() => { if (fillInput.trim()) submitAnswer(fillInput.trim()); }}
               disabled={!fillInput.trim()}
-              className="px-4 py-3 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 transition-all"
+              className="border-2 border-slate-800 bg-amber-300 px-4 py-3 text-sm font-medium text-slate-900 shadow-[2px_2px_0_#7c2d12] transition-all hover:bg-amber-400 disabled:opacity-40"
             >
               提交
             </button>
@@ -285,7 +290,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
 
       {/* 解析 */}
       {showExplanation && (
-        <div className={`rounded-xl border p-4 text-sm ${results[currentIdx]?.correct ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+        <div className={`border-2 p-4 text-sm ${results[currentIdx]?.correct ? 'border-emerald-700 bg-[#e2f3d0]' : 'border-amber-600 bg-[#fff4cc]'}`}>
           <div className="flex items-center gap-1.5 font-semibold mb-1">
             {results[currentIdx]?.correct
               ? <><CheckCircle2 className="w-4 h-4 text-green-500" /><span className="text-green-700">回答正确！</span></>
@@ -300,7 +305,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
       {isAnswered && (
         <button
           onClick={goNext}
-          className="flex items-center justify-center gap-1.5 w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all"
+          className="flex w-full items-center justify-center gap-1.5 border-2 border-slate-800 bg-amber-300 py-3 font-semibold text-slate-900 shadow-[3px_3px_0_#7c2d12] transition-all hover:bg-amber-400"
         >
           {isLast ? <><Trophy className="w-4 h-4" /> 查看结果</> : <>下一题 <ChevronRight className="w-4 h-4" /></>}
         </button>

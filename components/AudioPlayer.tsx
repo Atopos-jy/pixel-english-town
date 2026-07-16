@@ -27,7 +27,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, onD
 
   if (!src) {
     return (
-      <div className="flex items-center p-4 bg-gray-100 rounded-lg text-gray-500 text-sm">
+      <div className="flex items-center border-2 border-slate-800 bg-[#fff4cc] p-4 text-slate-600 text-sm">
         <Volume2 className="w-5 h-5 mr-2 opacity-50" />
         该文章暂无音频。
       </div>
@@ -81,9 +81,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, onD
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  const progressPercentage = duration > 0
+    ? Math.min((progress / duration) * 100, 100)
+    : 0;
+
   if (error) {
     return (
-      <div className="flex items-center p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+      <div className="flex items-center border-2 border-[#b94d3c] bg-[#ffe1d6] p-4 text-[#9f3426] text-sm">
         <AlertCircle className="w-5 h-5 mr-2" />
         无法加载音频文件。
       </div>
@@ -91,7 +95,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, onD
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm w-full">
+    <div className="w-full border-2 border-slate-800 bg-[#fff9e8] p-4 shadow-[3px_3px_0_#d7b958]">
       <audio
         ref={audioRef}
         src={src}
@@ -104,7 +108,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, onD
       <div className="flex items-center justify-between gap-4">
         <button
           onClick={togglePlay}
-          className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-md"
+          className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-slate-800 bg-amber-300 text-slate-900 shadow-[2px_2px_0_#7c2d12] transition hover:bg-amber-400"
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
@@ -117,7 +121,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, onD
             max={duration || 100}
             value={progress}
             onChange={handleSeek}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+            className="h-2 w-full cursor-pointer appearance-none bg-[#dce9c8] accent-emerald-700"
+            style={{
+              background: `linear-gradient(to right, #047857 0%, #047857 ${progressPercentage}%, #dce9c8 ${progressPercentage}%, #dce9c8 100%)`,
+            }}
           />
           <div className="flex justify-between text-xs text-slate-500 mt-1 font-medium">
             <span>{formatTime(progress)}</span>
@@ -132,7 +139,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, onD
               setProgress(0);
             }
           }}
-          className="p-2 text-slate-400 hover:text-indigo-600 transition"
+          className="border-2 border-transparent p-2 text-slate-500 transition hover:border-slate-800 hover:bg-[#e2f3d0] hover:text-emerald-800"
           aria-label="Restart"
         >
           <RotateCcw size={20} />
