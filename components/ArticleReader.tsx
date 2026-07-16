@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Article, Difficulty, WordTimestamp } from '../types';
 import { AudioPlayer } from './AudioPlayer';
 import { DIFFICULTY_LABELS } from '../constants';
-import { CheckCircle2, Calendar, Trophy, Mic, Square, BookOpenCheck } from 'lucide-react';
+import { CheckCircle2, Calendar, Trophy, Mic, Square, BookOpen, BookOpenCheck, Settings } from 'lucide-react';
 import { Viewer } from '@bytemd/react';
-import { ArticleQuiz } from './ArticleQuiz';
 import gfm from '@bytemd/plugin-gfm';
 import 'bytemd/dist/index.css';
 import '../app/bytemd-custom.css';
@@ -14,11 +13,14 @@ interface ArticleReaderProps {
   article: Article;
   isCompleted: boolean;
   onComplete: () => void;
+  onOpenQuiz?: () => void;
+  onOpenAiSettings?: () => void;
+  onOpenShelf?: () => void;
 }
 
 type ViewMode = 'en' | 'zh' | 'bilingual';
 
-export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isCompleted, onComplete }) => {
+export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isCompleted, onComplete, onOpenQuiz = () => {}, onOpenAiSettings = () => {}, onOpenShelf = () => {} }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('en');
   const [currentAudioTime, setCurrentAudioTime] = useState(0);
@@ -27,10 +29,6 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
   const [activeWordIndex, setActiveWordIndex] = useState<number | null>(null);
   // 记录历史最远读到的单词下标，只增不减，音频暂停/结束后已读颜色不丢失
   const maxReadWordIndexRef = React.useRef<number>(-1);
-
-  // 测验面板状态
-  const [showQuiz, setShowQuiz] = useState(false);
-
   // 跟读练习状态
   const [evalMode, setEvalMode] = useState(false);
   const [recordingKey, setRecordingKey] = useState<string | null>(null);
@@ -417,13 +415,39 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
 
   // Difficulty badge color map
   const difficultyColors = {
-    [Difficulty.Beginner]: 'bg-green-100 text-green-700 border-green-200',
-    [Difficulty.Intermediate]: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    [Difficulty.Advanced]: 'bg-red-100 text-red-700 border-red-200',
+    [Difficulty.Beginner]: 'border-emerald-700 bg-[#e2f3d0] text-emerald-900',
+    [Difficulty.Intermediate]: 'border-amber-600 bg-[#fff0ad] text-amber-950',
+    [Difficulty.Advanced]: 'border-[#b94d3c] bg-[#ffe1d6] text-[#8b2c21]',
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-24 px-4 animate-fade-in">
+    <div className="mx-auto max-w-4xl px-4 pb-24 animate-fade-in">
+      <div className="mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-800 pb-4">
+        <p className="text-xs font-black tracking-[0.15em] text-emerald-700">阅读小屋</p>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onOpenShelf}
+            className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#fff9e8] px-3 py-2 text-xs font-black text-slate-700 transition hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900 xl:hidden"
+          >
+            <BookOpen size={15} />书架
+          </button>
+          <button
+            type="button"
+            onClick={onOpenAiSettings}
+            className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#fff9e8] px-3 py-2 text-xs font-black text-slate-700 transition hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900"
+          >
+            <Settings size={15} />AI 设置
+          </button>
+          <button
+            type="button"
+            onClick={onOpenQuiz}
+            className="inline-flex items-center gap-1.5 border-2 border-slate-800 bg-amber-300 px-3 py-2 text-xs font-black text-slate-900 shadow-[2px_2px_0_#7c2d12] transition hover:bg-amber-400"
+          >
+            <BookOpenCheck size={15} />开始测验
+          </button>
+        </div>
+      </div>
       {/* View Mode Toggle */}
       <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
         {/* 跟读练习开关（仅有词级时间戳时显示） */}
@@ -434,32 +458,32 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
               setEvalMode(v => !v);
               if (evalMode) setEvalResultsByGlobalIdx(new Map());
             }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+            className={`inline-flex items-center gap-1.5 border-2 px-3 py-1.5 text-xs font-semibold transition-all ${
               evalMode
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'
+                ? 'border-emerald-800 bg-emerald-700 text-white shadow-[2px_2px_0_#14532d]'
+                : 'border-slate-700 bg-[#fff9e8] text-slate-700 hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900'
             }`}
           >
             <Mic className="w-3.5 h-3.5" />
             {evalMode ? '退出跟读' : '跟读练习'}
           </button>
         )}
-        <div className="inline-flex bg-slate-100 rounded-lg p-1 shadow-sm border border-slate-200 ml-auto">
+        <div className="ml-auto inline-flex border-2 border-slate-800 bg-[#e8f0d8] p-1">
            <button 
              onClick={() => setViewMode('en')}
-             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'en' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+             className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'en' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
            >
              English
            </button>
            <button 
              onClick={() => setViewMode('zh')}
-             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'zh' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+             className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'zh' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
            >
              中文
            </button>
            <button 
              onClick={() => setViewMode('bilingual')}
-             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'bilingual' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+             className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'bilingual' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
            >
              中英对照
            </button>
@@ -483,14 +507,14 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
           {(viewMode === 'zh' || viewMode === 'bilingual') && <div className={viewMode === 'bilingual' ? 'text-3xl text-slate-700' : ''}>{article.title.zh}</div>}
         </h1>
         
-        <div className="mt-4 text-xl text-slate-600 italic border-l-4 border-indigo-200 pl-4 py-2">
+        <div className="mt-4 border-l-4 border-emerald-600 py-2 pl-4 text-xl italic text-slate-600">
           {(viewMode === 'en' || viewMode === 'bilingual') && <p className="mb-2">{article.summary.en}</p>}
           {(viewMode === 'zh' || viewMode === 'bilingual') && <p className={viewMode === 'bilingual' ? 'text-lg text-slate-500' : ''}>{article.summary.zh}</p>}
         </div>
       </header>
 
       {/* Sticky Audio Player on Mobile, or Inline on Desktop */}
-      <div className="sticky top-2 z-20 mb-8 bg-white/90 backdrop-blur-md p-2 rounded-xl border border-slate-100 shadow-sm md:static md:bg-transparent md:border-none md:shadow-none md:p-0">
+      <div className="sticky top-2 z-20 mb-8 border-2 border-slate-800 bg-[#fff9e8] p-2 shadow-[3px_3px_0_#d7b958] md:static md:border-none md:bg-transparent md:p-0 md:shadow-none">
          <AudioPlayer 
            src={article.audioUrl} 
            onTimeUpdate={updateActiveBlock}
@@ -596,7 +620,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
                         if (evalStatus === 'correct') color = '#22c55e';
                         else if (evalStatus === 'substituted') color = '#f59e0b';
                         else if (evalStatus === 'deleted') { color = '#ef4444'; textDecoration = 'line-through'; }
-                        else color = hasBeenRead ? '#4f46e5' : '#cbd5e1';
+                        else color = hasBeenRead ? '#14896d' : '#aab69b';
 
                         return (
                           <span
@@ -616,16 +640,16 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
                           onClick={() => isRecording ? stopRecording() : startRecording(sentKey)}
                           disabled={isProcessing || (recordingKey !== null && !isRecording)}
                           title={isRecording ? '点击停止录音' : '点击开始跟读这句话'}
-                          className={`inline-flex items-center gap-1 ml-1.5 px-2 py-0.5 rounded-md text-xs font-medium transition-all align-middle ${
+                          className={`inline-flex items-center gap-1 ml-1.5 border-2 px-2 py-0.5 text-xs font-medium transition-all align-middle ${
                             isRecording
-                              ? 'bg-red-500 text-white animate-pulse cursor-pointer'
-                              : isProcessing
-                              ? 'bg-slate-200 text-slate-400 cursor-wait'
-                              : (recordingKey !== null && !isRecording)
-                              ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                              : hasEval
-                              ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 cursor-pointer'
-                              : 'bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer'
+                              ? 'border-[#b94d3c] bg-[#e77e65] text-white animate-pulse cursor-pointer'
+                            : isProcessing
+                              ? 'border-slate-300 bg-slate-200 text-slate-400 cursor-wait'
+                            : (recordingKey !== null && !isRecording)
+                              ? 'border-slate-200 bg-slate-100 text-slate-300 cursor-not-allowed'
+                            : hasEval
+                              ? 'border-emerald-700 bg-[#e2f3d0] text-emerald-900 hover:bg-[#cfeab5] cursor-pointer'
+                              : 'border-slate-500 bg-[#fff9e8] text-slate-600 hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900 cursor-pointer'
                           }`}
                         >
                           {isRecording
@@ -661,8 +685,8 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
                             if (el) paragraphRefs.current.set(refKey, el);
                             else paragraphRefs.current.delete(refKey);
                           }}
-                          className={`bytemd-viewer transition-all duration-200 rounded ${
-                            isActive ? 'bg-yellow-100 ring-2 ring-yellow-400 px-2 -mx-2' : ''
+                          className={`bytemd-viewer transition-all duration-200 ${
+                            isActive ? 'border-l-4 border-amber-500 bg-[#fff4cc] px-2 -mx-2' : ''
                           }`}
                         >
                           <Viewer value={sent} plugins={plugins} />
@@ -673,7 +697,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
                 </div>
               )}
               {(viewMode === 'zh' || viewMode === 'bilingual') && (
-                <div className={viewMode === 'bilingual' ? 'text-base text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100' : ''}>
+                <div className={viewMode === 'bilingual' ? 'border-l-4 border-emerald-600 bg-[#f3f8e9] p-3 text-base text-slate-600' : ''}>
                   {zhParagraphs.map((para, paraIdx) => (
                     <div key={paraIdx} className="bytemd-viewer my-1">
                       <Viewer value={para} plugins={plugins} />
@@ -686,40 +710,25 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
         })}
       </article>
 
-      {/* 阅读理解测验 */}
-      <div className="mb-8">
-        <button
-          onClick={() => setShowQuiz(v => !v)}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm border ${
-            showQuiz
-              ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
-              : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'
-          }`}
-        >
-          <BookOpenCheck className="w-4 h-4" />
-          {showQuiz ? '收起测验' : '阅读理解测验'}
-        </button>
-
-        {showQuiz && (
-          <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <ArticleQuiz
-              articleText={article.content.map(b => b.en).join('\n\n')}
-              difficulty={article.difficulty}
-              onClose={() => setShowQuiz(false)}
-            />
-          </div>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={onOpenQuiz}
+        aria-label="打开阅读理解测验"
+        className="fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 border-2 border-r-0 border-slate-800 bg-amber-300 px-2 py-4 text-xs font-black text-slate-900 shadow-[-3px_3px_0_#7c2d12] lg:flex lg:flex-col lg:items-center lg:gap-1"
+      >
+        <BookOpenCheck size={17} />
+        <span className="[writing-mode:vertical-rl]">测验</span>
+      </button>
 
       {/* Action Footer */}
       <div className="fixed bottom-20 left-0 right-0 px-4 md:static md:px-0">
         <button
           onClick={handleComplete}
           disabled={isCompleted}
-          className={`w-full md:w-auto md:min-w-[200px] flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg transition-all transform active:scale-95 ${
+          className={`flex w-full items-center justify-center gap-2 border-2 border-slate-800 py-4 font-bold transition-all transform active:scale-95 md:w-auto md:min-w-[200px] ${
             isCompleted
-              ? 'bg-green-100 text-green-700 cursor-default border border-green-200'
-              : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-200'
+              ? 'bg-[#e2f3d0] text-emerald-900 cursor-default'
+              : 'bg-amber-300 text-slate-900 shadow-[3px_3px_0_#7c2d12] hover:bg-amber-400'
           }`}
         >
           {isCompleted ? (
@@ -738,9 +747,9 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
             {/* Simple CSS animation for "confetti" or celebration feedback */}
-            <div className="bg-white p-6 rounded-2xl shadow-2xl border border-indigo-100 text-center animate-bounce">
-                <Trophy className="w-12 h-12 text-yellow-500 mx-auto mb-2" />
-                <h3 className="text-xl font-bold text-indigo-900">太棒了！</h3>
+            <div className="border-2 border-slate-800 bg-[#fff9e8] p-6 text-center shadow-[4px_4px_0_#7c2d12] animate-bounce">
+                <Trophy className="w-12 h-12 text-amber-500 mx-auto mb-2" />
+                <h3 className="text-xl font-bold text-emerald-900">太棒了！</h3>
                 <p className="text-slate-500">文章学习已完成。</p>
             </div>
         </div>
