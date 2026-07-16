@@ -62,10 +62,10 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-stretch md:justify-end">
       <button type="button" aria-label="关闭 AI 设置" className="absolute inset-0 cursor-default bg-slate-950/20" onClick={onClose} />
 
-      <aside aria-label="AI 出题设置" className="relative flex h-full w-full max-w-[440px] flex-col border-l-2 border-slate-800 bg-[#fff9e8] shadow-[-5px_0_0_#7d9b68]">
+      <aside aria-label="AI 出题设置" className="relative flex h-[88dvh] w-full max-w-none flex-col border-t-2 border-slate-800 bg-[#fff9e8] shadow-[0_-5px_0_#7d9b68] md:h-full md:max-w-[440px] md:border-l-2 md:border-t-0 md:shadow-[-5px_0_0_#7d9b68]">
         <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 bg-[#e2f3d0] px-5 py-4">
           <div>
             <p className="flex items-center gap-2 text-sm font-black text-emerald-900"><Settings2 size={18} />AI 出题设置</p>

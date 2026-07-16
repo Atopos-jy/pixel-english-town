@@ -30,7 +30,7 @@ export function QuizDrawer({ article, onRequestClose, onActivityChange }: QuizDr
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-stretch md:justify-end">
       <button
         type="button"
         aria-label="关闭阅读理解测验"
@@ -40,7 +40,7 @@ export function QuizDrawer({ article, onRequestClose, onActivityChange }: QuizDr
 
       <aside
         aria-label="阅读理解测验"
-        className="relative flex h-full w-full max-w-[480px] flex-col border-l-2 border-slate-800 bg-[#fff9e8] shadow-[-5px_0_0_#7d9b68]"
+        className="relative flex h-[88dvh] w-full max-w-none flex-col border-t-2 border-slate-800 bg-[#fff9e8] shadow-[0_-5px_0_#7d9b68] md:h-full md:max-w-[480px] md:border-l-2 md:border-t-0 md:shadow-[-5px_0_0_#7d9b68]"
       >
         <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 bg-[#e2f3d0] px-5 py-4">
           <div>

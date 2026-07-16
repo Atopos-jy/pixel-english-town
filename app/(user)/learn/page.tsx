@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { BookOpen, Check } from 'lucide-react';
+import { BookOpen, Check, X } from 'lucide-react';
 import { ArticleReader } from '@/components/ArticleReader';
+import { ArticleShelf } from '@/components/ArticleShelf';
 import { AiSettingsDrawer, AiSettingsDraft } from '@/components/AiSettingsDrawer';
 import { QuizDrawer } from '@/components/QuizDrawer';
 import { Loading } from '@/components/Loading';
@@ -21,6 +22,7 @@ export default function LearnPage() {
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
   const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
+  const [isShelfOpen, setIsShelfOpen] = useState(false);
   const [aiSettingsDraft, setAiSettingsDraft] = useState<AiSettingsDraft>({
     provider: 'deepseek',
     apiKey: '',
@@ -78,9 +80,10 @@ export default function LearnPage() {
   };
 
   const chooseArticle = (nextArticle: Article) => {
-    if (nextArticle.id === article.id) return;
-    if (isQuizOpen && !requestCloseQuiz()) return;
+    if (nextArticle.id === article.id) return true;
+    if (isQuizOpen && !requestCloseQuiz()) return false;
     setArticle(nextArticle);
+    return true;
   };
 
   const openQuiz = () => {
@@ -94,7 +97,7 @@ export default function LearnPage() {
   return (
     <div className="min-h-full bg-[#e8f0d8] p-3 md:p-6">
       <div className="mx-auto grid max-w-[1500px] gap-5 xl:grid-cols-[270px_minmax(0,1fr)]">
-        <aside className="border-2 border-slate-800 bg-[#fff9e8] shadow-[4px_4px_0_#7d9b68]">
+        <aside className="hidden border-2 border-slate-800 bg-[#fff9e8] shadow-[4px_4px_0_#7d9b68] xl:block">
           <div className="border-b-2 border-slate-800 bg-[#172033] p-4 text-white">
             <p className="flex items-center gap-2 text-sm font-black">
               <BookOpen size={18} />
@@ -132,9 +135,40 @@ export default function LearnPage() {
             onComplete={completeArticle}
             onOpenQuiz={openQuiz}
             onOpenAiSettings={() => setIsAiSettingsOpen(true)}
+            onOpenShelf={() => setIsShelfOpen(true)}
           />
         </section>
       </div>
+
+      {isShelfOpen && (
+        <div className="fixed inset-0 z-50 xl:hidden">
+          <button
+            type="button"
+            aria-label="关闭文章书架"
+            className="absolute inset-0 cursor-default bg-slate-950/20"
+            onClick={() => setIsShelfOpen(false)}
+          />
+          <aside aria-label="文章书架" className="relative flex h-full w-[min(84vw,340px)] flex-col border-r-2 border-slate-800 bg-[#fff9e8] shadow-[5px_0_0_#7d9b68]">
+            <button
+              type="button"
+              aria-label="关闭文章书架"
+              onClick={() => setIsShelfOpen(false)}
+              className="absolute right-3 top-3 z-10 border-2 border-slate-800 bg-[#fff9e8] p-1 text-slate-800 transition hover:bg-amber-300"
+            >
+              <X size={18} />
+            </button>
+            <ArticleShelf
+              articles={articles}
+              activeArticleId={article.id}
+              completedArticleIds={progress.completedArticleIds}
+              listClassName="min-h-0 flex-1"
+              onSelect={(nextArticle) => {
+                if (chooseArticle(nextArticle)) setIsShelfOpen(false);
+              }}
+            />
+          </aside>
+        </div>
+      )}
 
       {isQuizOpen && (
         <QuizDrawer
