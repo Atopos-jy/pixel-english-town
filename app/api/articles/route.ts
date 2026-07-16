@@ -46,8 +46,10 @@ export async function GET() {
 
     return NextResponse.json(formattedArticles);
   } catch (error) {
-    console.warn('Database connection failed. Returning mock articles for fallback.', error);
-    // Fallback to MOCK_ARTICLES if DB fails
-    return NextResponse.json(MOCK_ARTICLES);
+    console.error('Database connection failed.', error);
+    return NextResponse.json(
+      { error: '数据库连接失败，无法获取文章' },
+      { status: 503 }
+    );
   }
 }

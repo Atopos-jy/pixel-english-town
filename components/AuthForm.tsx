@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { ArrowRight, Mail, UserRound } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +21,11 @@ export const AuthForm: React.FC = () => {
     try {
       if (isLogin) {
         const result = await signIn('credentials', { redirect: false, email, password });
-        if (result?.error) setError('邮箱或密码错误');
+        if (result?.error) {
+          setError('邮箱或密码错误');
+        } else {
+          router.push('/town');
+        }
       } else {
         const res = await fetch('/api/register', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, name }),
@@ -28,6 +34,7 @@ export const AuthForm: React.FC = () => {
         if (!res.ok) throw new Error(data.error || '注册失败');
         const result = await signIn('credentials', { redirect: false, email, password });
         if (result?.error) throw new Error('注册成功，但自动登录失败，请重新登录');
+        router.push('/town');
       }
     } catch (err: any) {
       setError(err.message || '发生错误，请稍后再试');

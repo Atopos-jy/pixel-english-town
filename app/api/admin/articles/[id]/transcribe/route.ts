@@ -32,7 +32,7 @@ export async function POST(
       return NextResponse.json({ error: '服务器未配置 GROQ_API_KEY' }, { status: 500 });
     }
 
-    // 从 COS 下载音频到内存
+    // 从对象存储下载音频到内存。
     const audioResponse = await fetch(article.audioUrl);
     if (!audioResponse.ok) {
       return NextResponse.json({ error: '下载音频文件失败' }, { status: 500 });
