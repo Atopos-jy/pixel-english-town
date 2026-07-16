@@ -19,7 +19,7 @@ export default function PlazaPage() {
       <section
         className="absolute inset-0 bg-center"
         style={{
-          backgroundImage: "url('/images/plaza/plaza-overview-v3.png')",
+          backgroundImage: "url('/images/plaza/plaza-overview.png')",
           backgroundSize: '100% 100%',
         }}
         aria-label="学习广场"

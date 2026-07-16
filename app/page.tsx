@@ -68,7 +68,7 @@ export default function HomePage() {
     <main className="relative min-h-screen overflow-hidden bg-[#f6dfaa] text-white">
       <div
         aria-hidden="true"
-        className={`absolute inset-x-0 top-0 bg-[url('/images/home/come-background-v1.png')] bg-cover bg-center transition-all duration-700 ease-out ${
+        className={`absolute inset-x-0 top-0 bg-[url('/images/home/come-background.png')] bg-cover bg-center transition-all duration-700 ease-out ${
           showAuth ? 'h-[28vh] bg-[position:center_62%]' : 'h-full'
         }`}
       />
@@ -105,7 +105,7 @@ export default function HomePage() {
         style={{ bottom: 'calc(12% - 40px)' }}
         aria-label="点击进入小镇"
       >
-        <img src="/images/home/enter-town-button-v2.png" alt="点击进入小镇" className="h-auto w-full" />
+        <img src="/images/home/enter-town-button.png" alt="点击进入小镇" className="h-auto w-full" />
       </button>}
     </main>
   );
