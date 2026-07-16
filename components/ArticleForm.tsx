@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Difficulty } from '@/types';
 import { Editor } from '@bytemd/react';
 import gfm from '@bytemd/plugin-gfm';
-import CosUploader from './CosUploader';
+import OssUploader from './OssUploader';
 import 'bytemd/dist/index.css';
 import '../app/bytemd-custom.css';
 
@@ -293,7 +293,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             音频文件（可选）
           </label>
-          <CosUploader
+          <OssUploader
             value={formData.audioUrl || ''}
             onChange={(url) => setFormData({ ...formData, audioUrl: url })}
             onDurationChange={(duration) => {
