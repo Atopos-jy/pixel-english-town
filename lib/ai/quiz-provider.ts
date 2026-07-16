@@ -109,12 +109,23 @@ const providers: Record<AiProviderId, AiQuizProvider> = {
 
 export const getQuizProvider = (provider: AiProviderId) => providers[provider];
 
-export const isSupportedAiConfiguration = (value: unknown): value is AiConfiguration => {
-  if (!value || typeof value !== 'object') return false;
+export const getAiConfigurationValidationError = (value: unknown): string | null => {
+  if (!value || typeof value !== 'object') return 'AI 厂商、模型或 API Key 无效。';
   const configuration = value as AiConfiguration;
-  return (configuration.provider === 'deepseek' || configuration.provider === 'mimo')
-    && typeof configuration.apiKey === 'string'
-    && configuration.apiKey.trim().length >= 8
-    && typeof configuration.model === 'string'
-    && supportedModels[configuration.provider].includes(configuration.model);
+  if (configuration.provider !== 'deepseek' && configuration.provider !== 'mimo') {
+    return 'AI 厂商、模型或 API Key 无效。';
+  }
+  if (typeof configuration.apiKey !== 'string' || configuration.apiKey.trim().length < 8) {
+    return 'AI 厂商、模型或 API Key 无效。';
+  }
+  if (configuration.provider === 'mimo' && configuration.apiKey.trim().startsWith('tp-')) {
+    return 'tp- 密钥属于 MiMo Token Plan，不能用于本场景，请使用 MiMo 控制台创建的 sk- 按量计费 API Key。';
+  }
+  if (typeof configuration.model !== 'string' || !supportedModels[configuration.provider].includes(configuration.model)) {
+    return 'AI 厂商、模型或 API Key 无效。';
+  }
+  return null;
 };
+
+export const isSupportedAiConfiguration = (value: unknown): value is AiConfiguration =>
+  getAiConfigurationValidationError(value) === null;
