@@ -9,12 +9,13 @@ export interface AiSettingsDraft {
   provider: AiProvider;
   apiKey: string;
   model: string;
+  apiKeyLast4?: string;
 }
 
 interface AiSettingsDrawerProps {
   initialSettings: AiSettingsDraft;
   onClose: () => void;
-  onSaveDraft: (settings: AiSettingsDraft) => void;
+  onSaveDraft: (settings: AiSettingsDraft) => Promise<{ ok: boolean; error?: string }>;
   onRequestTest: (settings: AiSettingsDraft) => void;
 }
 
@@ -31,6 +32,8 @@ const providerOptions: Record<AiProvider, Array<{ value: string; label: string }
 
 export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequestTest }: AiSettingsDrawerProps) {
   const [settings, setSettings] = useState<AiSettingsDraft>(initialSettings);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -45,10 +48,17 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
     setSettings({ provider, apiKey: settings.apiKey, model: providerOptions[provider][0].value });
   };
 
-  const saveDraft = () => {
+  const saveDraft = async () => {
     if (!settings.apiKey.trim()) return;
-    onSaveDraft({ ...settings, apiKey: settings.apiKey.trim() });
-    onClose();
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const result = await onSaveDraft({ ...settings, apiKey: settings.apiKey.trim() });
+      if (result.ok) onClose();
+      else setSaveError(result.error || 'AI settings save failed.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -88,7 +98,7 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
               autoComplete="new-password"
               value={settings.apiKey}
               onChange={(event) => setSettings({ ...settings, apiKey: event.target.value })}
-              placeholder={settings.provider === 'deepseek' ? '输入 DeepSeek API Key' : '输入 MiMo API Key'}
+              placeholder={settings.apiKeyLast4 ? `已保存 ····${settings.apiKeyLast4}；输入新 Key 可更新` : (settings.provider === 'deepseek' ? '输入 DeepSeek API Key' : '输入 MiMo API Key')}
               className="w-full border-2 border-slate-700 bg-[#fffdf4] px-3 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-emerald-700"
             />
           </label>
@@ -106,16 +116,17 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
           </label>
 
           <div className="border-l-4 border-amber-500 bg-[#fff4cc] p-3 text-xs leading-5 text-slate-700">
-            点击测试或出题时，Key 只会随当前请求发送给所选厂商，不写入浏览器或数据库；第 6 步将加入加密保存。
+            保存后，Key 会使用服务器密钥加密后写入数据库；页面和接口响应只会显示末四位。
           </div>
+          {saveError && <p className="border-2 border-[#b94d3c] bg-[#ffe1d6] p-3 text-xs text-[#9f3426]">{saveError}</p>}
         </div>
 
         <footer className="grid grid-cols-2 gap-3 border-t-2 border-slate-800 bg-[#fffdf4] p-5">
-          <button type="button" onClick={() => onRequestTest({ ...settings, apiKey: settings.apiKey.trim() })} disabled={!settings.apiKey.trim()} className="border-2 border-emerald-800 bg-[#e2f3d0] px-3 py-3 text-sm font-black text-emerald-950 transition hover:bg-[#cfeab5] disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={() => onRequestTest({ ...settings, apiKey: settings.apiKey.trim() })} disabled={!settings.apiKey.trim() && !settings.apiKeyLast4} className="border-2 border-emerald-800 bg-[#e2f3d0] px-3 py-3 text-sm font-black text-emerald-950 transition hover:bg-[#cfeab5] disabled:cursor-not-allowed disabled:opacity-50">
             测试连接
           </button>
-          <button type="button" onClick={saveDraft} disabled={!settings.apiKey.trim()} className="flex items-center justify-center gap-1.5 border-2 border-slate-800 bg-amber-300 px-3 py-3 text-sm font-black text-slate-900 shadow-[3px_3px_0_#7c2d12] transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50">
-            <Check size={16} />暂存设置
+          <button type="button" onClick={saveDraft} disabled={!settings.apiKey.trim() || isSaving} className="flex items-center justify-center gap-1.5 border-2 border-slate-800 bg-amber-300 px-3 py-3 text-sm font-black text-slate-900 shadow-[3px_3px_0_#7c2d12] transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50">
+            <Check size={16} />{isSaving ? '保存中…' : '保存设置'}
           </button>
         </footer>
       </aside>

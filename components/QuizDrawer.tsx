@@ -3,17 +3,15 @@
 import { useEffect } from 'react';
 import { BookOpenCheck, X } from 'lucide-react';
 import { Article, Difficulty } from '@/types';
-import type { AiConfiguration } from '@/lib/ai/types';
 import { ArticleQuiz } from './ArticleQuiz';
 
 interface QuizDrawerProps {
   article: Article;
-  aiConfiguration: AiConfiguration;
   onRequestClose: () => void;
   onActivityChange: (isActive: boolean) => void;
 }
 
-export function QuizDrawer({ article, aiConfiguration, onRequestClose, onActivityChange }: QuizDrawerProps) {
+export function QuizDrawer({ article, onRequestClose, onActivityChange }: QuizDrawerProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onRequestClose();
@@ -66,7 +64,6 @@ export function QuizDrawer({ article, aiConfiguration, onRequestClose, onActivit
             key={article.id}
             articleText={article.content.map((block) => block.en).join('\n\n')}
             difficulty={article.difficulty as Difficulty}
-            aiConfiguration={aiConfiguration}
             onClose={onRequestClose}
             onActivityChange={onActivityChange}
           />

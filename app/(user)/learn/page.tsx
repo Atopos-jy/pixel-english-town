@@ -36,6 +36,19 @@ export default function LearnPage() {
         setArticle(items[0] || null);
       })
       .finally(() => setLoading(false));
+
+    fetch('/api/ai/settings')
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!data?.settings) return;
+        setAiSettingsDraft({
+          provider: data.settings.provider,
+          model: data.settings.model,
+          apiKey: '',
+          apiKeyLast4: data.settings.apiKeyLast4,
+        });
+      })
+      .catch(() => undefined);
   }, [status]);
 
   if (status === 'loading' || loading || progressLoading) return <Loading />;
@@ -71,7 +84,7 @@ export default function LearnPage() {
   };
 
   const openQuiz = () => {
-    if (!aiSettingsDraft.apiKey) {
+    if (!aiSettingsDraft.apiKeyLast4) {
       setIsAiSettingsOpen(true);
       return;
     }
@@ -126,7 +139,6 @@ export default function LearnPage() {
       {isQuizOpen && (
         <QuizDrawer
           article={article}
-          aiConfiguration={aiSettingsDraft}
           onRequestClose={requestCloseQuiz}
           onActivityChange={setIsQuizActive}
         />
@@ -136,9 +148,27 @@ export default function LearnPage() {
         <AiSettingsDrawer
           initialSettings={aiSettingsDraft}
           onClose={() => setIsAiSettingsOpen(false)}
-          onSaveDraft={(settings) => {
-            setAiSettingsDraft(settings);
-            setNotice(`${settings.provider === 'deepseek' ? 'DeepSeek' : 'MiMo'} 配置已暂存到当前页面。`);
+          onSaveDraft={async (settings) => {
+            try {
+              const response = await fetch('/api/ai/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ configuration: settings }),
+              });
+              const data = await response.json();
+              if (!response.ok) return { ok: false, error: data.error || 'AI 设置保存失败。' };
+
+              setAiSettingsDraft({
+                provider: data.settings.provider,
+                model: data.settings.model,
+                apiKey: '',
+                apiKeyLast4: data.settings.apiKeyLast4,
+              });
+              setNotice(`${settings.provider === 'deepseek' ? 'DeepSeek' : 'MiMo'} 设置已加密保存。`);
+              return { ok: true };
+            } catch {
+              return { ok: false, error: '无法保存 AI 设置，请检查网络后重试。' };
+            }
           }}
           onRequestTest={async (settings) => {
             setNotice('正在测试 AI 连接…');
