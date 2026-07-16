@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, KeyRound, Settings2, X } from 'lucide-react';
+import { Check, ChevronDown, KeyRound, Settings2, X } from 'lucide-react';
 
 export type AiProvider = 'deepseek' | 'mimo';
 
@@ -34,6 +34,7 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
   const [settings, setSettings] = useState<AiSettingsDraft>(initialSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isModelSelectOpen, setIsModelSelectOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -62,10 +63,10 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-stretch md:justify-end">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6">
       <button type="button" aria-label="关闭 AI 设置" className="absolute inset-0 cursor-default bg-slate-950/20" onClick={onClose} />
 
-      <aside aria-label="AI 出题设置" className="relative flex h-[88dvh] w-full max-w-none flex-col border-t-2 border-slate-800 bg-[#fff9e8] shadow-[0_-5px_0_#7d9b68] md:h-full md:max-w-[440px] md:border-l-2 md:border-t-0 md:shadow-[-5px_0_0_#7d9b68]">
+      <aside aria-label="AI 出题设置" className="relative flex h-[min(88dvh,680px)] w-full max-w-[440px] flex-col border-2 border-slate-800 bg-[#fff9e8] shadow-[5px_5px_0_#7d9b68]">
         <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 bg-[#e2f3d0] px-5 py-4">
           <div>
             <p className="flex items-center gap-2 text-sm font-black text-emerald-900"><Settings2 size={18} />AI 出题设置</p>
@@ -95,7 +96,8 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
             <span className="mb-2 flex items-center gap-1.5 text-xs font-black text-slate-800"><KeyRound size={14} />API Key</span>
             <input
               type="password"
-              autoComplete="new-password"
+              name="ai-api-key"
+              autoComplete="off"
               value={settings.apiKey}
               onChange={(event) => setSettings({ ...settings, apiKey: event.target.value })}
               placeholder={settings.apiKeyLast4 ? `已保存 ····${settings.apiKeyLast4}；输入新 Key 可更新` : (settings.provider === 'deepseek' ? '输入 DeepSeek API Key' : '输入 MiMo API Key')}
@@ -105,13 +107,22 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
 
           <label className="block">
             <span className="mb-2 block text-xs font-black text-slate-800">出题模型</span>
-            <select
-              value={settings.model}
-              onChange={(event) => setSettings({ ...settings, model: event.target.value })}
-              className="w-full border-2 border-slate-700 bg-[#fffdf4] px-3 py-3 text-sm font-medium text-slate-800 outline-none focus:border-emerald-700"
-            >
-              {providerOptions[settings.provider].map((model) => <option key={model.value} value={model.value}>{model.label}</option>)}
-            </select>
+            <div className="relative">
+              <select
+                value={settings.model}
+                onMouseDown={() => setIsModelSelectOpen((isOpen) => !isOpen)}
+                onFocus={() => setIsModelSelectOpen(true)}
+                onBlur={() => setIsModelSelectOpen(false)}
+                onChange={(event) => {
+                  setSettings({ ...settings, model: event.target.value });
+                  setIsModelSelectOpen(false);
+                }}
+                className="w-full appearance-none border-2 border-slate-700 bg-[#fffdf4] px-3 py-3 pr-12 text-sm font-medium text-slate-800 outline-none focus:border-emerald-700"
+              >
+                {providerOptions[settings.provider].map((model) => <option key={model.value} value={model.value}>{model.label}</option>)}
+              </select>
+              <ChevronDown aria-hidden="true" className={`pointer-events-none absolute right-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700 transition-transform duration-200 ${isModelSelectOpen ? 'rotate-180' : ''}`} />
+            </div>
             <p className="mt-2 text-xs leading-5 text-slate-500">当前可选模型已由服务端校验；新增厂商或模型时只需扩展适配层。</p>
           </label>
 

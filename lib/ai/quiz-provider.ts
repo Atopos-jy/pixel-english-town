@@ -47,7 +47,12 @@ const parseQuestions = (raw: string): QuizQuestion[] => {
 class OpenAiCompatibleQuizProvider implements AiQuizProvider {
   constructor(private readonly provider: AiProviderId) {}
 
-  private async chat(configuration: AiConfiguration, messages: Array<{ role: 'system' | 'user'; content: string }>, maxTokens: number) {
+  private async chat(
+    configuration: AiConfiguration,
+    messages: Array<{ role: 'system' | 'user'; content: string }>,
+    maxTokens: number,
+    options: { disableThinking?: boolean } = {},
+  ) {
     const response = await fetch(`${providerBaseUrls[this.provider]}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -59,14 +64,23 @@ class OpenAiCompatibleQuizProvider implements AiQuizProvider {
         messages,
         temperature: 0.3,
         ...(this.provider === 'mimo' ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
+        ...(this.provider === 'deepseek' && options.disableThinking ? { thinking: { type: 'disabled' } } : {}),
         stream: false,
       }),
     });
 
     if (!response.ok) throw new Error(await getProviderError(response));
     const payload = await response.json();
-    const content = payload?.choices?.[0]?.message?.content;
-    if (typeof content !== 'string' || !content.trim()) throw new Error('模型未返回内容。');
+    const choice = payload?.choices?.[0];
+    const content = choice?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+      const finishReason = typeof choice?.finish_reason === 'string' ? choice.finish_reason : 'unknown';
+      const hasReasoningContent = typeof choice?.message?.reasoning_content === 'string' && choice.message.reasoning_content.trim().length > 0;
+      const reasoningDetail = hasReasoningContent
+        ? 'reasoning content was returned; the token budget may have been exhausted before a final answer.'
+        : 'no reasoning content was returned.';
+      throw new Error(`No final model content returned (finish_reason: ${finishReason}; ${reasoningDetail})`);
+    }
     return content;
   }
 
@@ -74,7 +88,7 @@ class OpenAiCompatibleQuizProvider implements AiQuizProvider {
     await this.chat(configuration, [
       { role: 'system', content: 'You are a connection test assistant.' },
       { role: 'user', content: 'Reply with OK.' },
-    ], 16);
+    ], 64, { disableThinking: true });
   }
 
   async generateQuiz(configuration: AiConfiguration, input: QuizGenerationInput) {

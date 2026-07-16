@@ -81,6 +81,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, onD
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  const progressPercentage = duration > 0
+    ? Math.min((progress / duration) * 100, 100)
+    : 0;
+
   if (error) {
     return (
       <div className="flex items-center border-2 border-[#b94d3c] bg-[#ffe1d6] p-4 text-[#9f3426] text-sm">
@@ -118,6 +122,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, onD
             value={progress}
             onChange={handleSeek}
             className="h-2 w-full cursor-pointer appearance-none bg-[#dce9c8] accent-emerald-700"
+            style={{
+              background: `linear-gradient(to right, #047857 0%, #047857 ${progressPercentage}%, #dce9c8 ${progressPercentage}%, #dce9c8 100%)`,
+            }}
           />
           <div className="flex justify-between text-xs text-slate-500 mt-1 font-medium">
             <span>{formatTime(progress)}</span>

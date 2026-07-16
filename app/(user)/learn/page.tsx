@@ -53,6 +53,13 @@ export default function LearnPage() {
       .catch(() => undefined);
   }, [status]);
 
+  useEffect(() => {
+    if (!notice) return;
+
+    const timeoutId = window.setTimeout(() => setNotice(null), 4500);
+    return () => window.clearTimeout(timeoutId);
+  }, [notice]);
+
   if (status === 'loading' || loading || progressLoading) return <Loading />;
 
   if (status !== 'authenticated' || !article || !progress) {
@@ -222,8 +229,11 @@ export default function LearnPage() {
       )}
 
       {notice && (
-        <div className="fixed right-5 top-20 z-[60] border-2 border-slate-900 bg-amber-300 px-4 py-3 text-sm font-black text-slate-900 shadow-[4px_4px_0_#7c2d12]">
-          {notice}
+        <div role="status" className="fixed right-5 top-20 z-[60] flex max-w-[calc(100vw-2.5rem)] items-start gap-3 border-2 border-slate-900 bg-amber-300 px-4 py-3 text-sm font-black text-slate-900 shadow-[4px_4px_0_#7c2d12]">
+          <span>{notice}</span>
+          <button type="button" onClick={() => setNotice(null)} aria-label="关闭提示" className="-mr-1 -mt-1 border-2 border-slate-800 bg-[#fff9e8] p-0.5 text-slate-800 transition hover:bg-[#fff4cc]">
+            <X size={14} />
+          </button>
         </div>
       )}
     </div>
