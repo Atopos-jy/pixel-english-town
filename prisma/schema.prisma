@@ -79,3 +79,12 @@ model Article {
   
   @@map("articles")
 }
+
+// 文章公开编号序列：在事务中递增，保证并发新建时 art-xxx 不会重复。
+model ArticleIdSequence {
+  name         String   @id
+  currentValue Int
+  updatedAt    DateTime @updatedAt
+
+  @@map("article_id_sequences")
+}
