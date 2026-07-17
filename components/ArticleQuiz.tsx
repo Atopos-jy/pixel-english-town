@@ -7,13 +7,15 @@ import { Bookmark, CheckCircle2, XCircle, RotateCcw, Trophy, Loader2, ChevronRig
 interface ArticleQuizProps {
   articleId: string;
   initialQuestions?: PublicQuizQuestion[];
+  activeGenerationJobId?: string | null;
   onClose: () => void;
   onActivityChange?: (isActive: boolean) => void;
+  onGenerationJobChange?: (jobId: string | null) => void;
 }
 
 type QuizPhase = 'idle' | 'loading' | 'answering' | 'finished';
 
-export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleId, initialQuestions, onClose, onActivityChange }) => {
+export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleId, initialQuestions, activeGenerationJobId, onClose, onActivityChange, onGenerationJobChange }) => {
   const isPracticeMode = Boolean(initialQuestions?.length);
   const [phase, setPhase] = useState<QuizPhase>(isPracticeMode ? 'answering' : 'idle');
   const [questions, setQuestions] = useState<PublicQuizQuestion[]>(initialQuestions || []);
@@ -26,10 +28,57 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleId, initialQues
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [bookmarkingQuestionId, setBookmarkingQuestionId] = useState<string | null>(null);
+  const [generationJobId, setGenerationJobId] = useState<string | null>(activeGenerationJobId || null);
 
   useEffect(() => {
-    onActivityChange?.(phase === 'loading' || phase === 'answering');
+    onActivityChange?.(phase === 'answering');
   }, [onActivityChange, phase]);
+
+  useEffect(() => {
+    if (!activeGenerationJobId || activeGenerationJobId === generationJobId) return;
+    setGenerationJobId(activeGenerationJobId);
+    setPhase('loading');
+  }, [activeGenerationJobId, generationJobId]);
+
+  useEffect(() => {
+    if (!generationJobId) return;
+    let stopped = false;
+    let timeoutId: number | undefined;
+
+    const checkJob = async () => {
+      try {
+        const response = await fetch(`/api/quiz/generate/${generationJobId}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '无法查询出题进度。');
+        if (stopped) return;
+
+        if (data.job.status === 'completed') {
+          setQuestions(data.job.questions || []);
+          setGenerationJobId(null);
+          onGenerationJobChange?.(null);
+          setPhase('answering');
+          return;
+        }
+        if (data.job.status === 'failed') {
+          setError(data.job.error || '出题失败。');
+          setGenerationJobId(null);
+          onGenerationJobChange?.(null);
+          setPhase('idle');
+          return;
+        }
+      } catch (jobError) {
+        if (stopped) return;
+        setError(jobError instanceof Error ? jobError.message : '无法查询出题进度。');
+      }
+      if (!stopped) timeoutId = window.setTimeout(checkJob, 2000);
+    };
+
+    void checkJob();
+    return () => {
+      stopped = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [generationJobId, onGenerationJobChange]);
 
   const currentQuestion = questions[currentIdx];
   const totalCount = questions.length;
@@ -55,8 +104,8 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleId, initialQues
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '生成失败');
-      setQuestions(data.questions);
-      setPhase('answering');
+      setGenerationJobId(data.job.id);
+      onGenerationJobChange?.(data.job.id);
     } catch (e: any) {
       setError(e.message);
       setPhase('idle');

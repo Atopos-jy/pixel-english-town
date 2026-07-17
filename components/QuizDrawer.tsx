@@ -8,12 +8,14 @@ import { ArticleQuiz } from './ArticleQuiz';
 interface QuizDrawerProps {
   article: Article;
   initialQuestions?: PublicQuizQuestion[];
+  activeGenerationJobId?: string | null;
   title?: string;
   onRequestClose: () => void;
   onActivityChange: (isActive: boolean) => void;
+  onGenerationJobChange?: (jobId: string | null) => void;
 }
 
-export function QuizDrawer({ article, initialQuestions, title = '阅读理解测验', onRequestClose, onActivityChange }: QuizDrawerProps) {
+export function QuizDrawer({ article, initialQuestions, activeGenerationJobId, title = '阅读理解测验', onRequestClose, onActivityChange, onGenerationJobChange }: QuizDrawerProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onRequestClose();
@@ -66,8 +68,10 @@ export function QuizDrawer({ article, initialQuestions, title = '阅读理解测
             articleId={article.id}
             key={article.id}
             initialQuestions={initialQuestions}
+            activeGenerationJobId={activeGenerationJobId}
             onClose={onRequestClose}
             onActivityChange={onActivityChange}
+            onGenerationJobChange={onGenerationJobChange}
           />
         </div>
       </aside>

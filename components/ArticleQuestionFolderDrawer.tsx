@@ -180,7 +180,7 @@ export function ArticleQuestionFolderDrawer({ article, onClose, onPractice }: { 
                   <option value="all">全部次数</option>
                   <option value="1">1 次</option>
                   <option value="2">2 次</option>
-                  <option value="3">三次及以上</option>
+                  <option value="3">3次以上</option>
                 </select>
               </div>
             )}

@@ -23,6 +23,7 @@ model User {
   aiSetting UserAiSetting?
   articleQuestions ArticleQuestion[]
   questionStates   UserQuestionState[]
+  quizGenerationJobs QuizGenerationJob[]
   
   @@map("users")
 }
@@ -95,6 +96,7 @@ model Article {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   questions       ArticleQuestion[]
+  quizGenerationJobs QuizGenerationJob[]
   
   @@map("articles")
 }
@@ -115,9 +117,30 @@ model ArticleQuestion {
   article         Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   createdByUser   User     @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
   userStates      UserQuestionState[]
+  generationJobId String?
+  generationJob   QuizGenerationJob? @relation(fields: [generationJobId], references: [id], onDelete: SetNull)
 
   @@index([articleId, createdByUserId])
+  @@index([generationJobId])
   @@map("article_questions")
+}
+
+model QuizGenerationJob {
+  id          String   @id @default(cuid())
+  userId      String
+  articleId   String
+  status      String   @default("pending")
+  error       String?  @db.Text
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  questions   ArticleQuestion[]
+
+  @@index([userId, articleId, status])
+  @@map("quiz_generation_jobs")
 }
 
 model UserQuestionState {
