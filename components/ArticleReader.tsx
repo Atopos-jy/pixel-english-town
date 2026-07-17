@@ -5,8 +5,6 @@ import { DIFFICULTY_LABELS } from '../constants';
 import { Bookmark, CheckCircle2, Calendar, Trophy, Mic, Square, BookOpen, BookOpenCheck, Settings } from 'lucide-react';
 import { Viewer } from '@bytemd/react';
 import gfm from '@bytemd/plugin-gfm';
-import 'bytemd/dist/index.css';
-import '../app/bytemd-custom.css';
 import { alignWords, WordStatus } from '../lib/textDiff';
 
 interface ArticleReaderProps {
@@ -21,7 +19,15 @@ interface ArticleReaderProps {
 
 type ViewMode = 'en' | 'zh' | 'bilingual';
 
-export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isCompleted, onComplete, onOpenQuiz = () => {}, onOpenQuestionFolder = () => {}, onOpenAiSettings = () => {}, onOpenShelf = () => {} }) => {
+export const ArticleReader: React.FC<ArticleReaderProps> = ({
+  article,
+  isCompleted,
+  onComplete,
+  onOpenQuiz = () => {},
+  onOpenQuestionFolder = () => {},
+  onOpenAiSettings = () => {},
+  onOpenShelf = () => {},
+}) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('en');
   const [currentAudioTime, setCurrentAudioTime] = useState(0);
@@ -46,22 +52,20 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
   // 是否启用单词级高亮模式
   const wordTimestamps = article.wordTimestamps as WordTimestamp[] | null | undefined;
   const hasWordTimestamps = !!wordTimestamps && wordTimestamps.length > 0;
-  
+
   // ByteMD插件配置 - 只使用GFM插件
-  const plugins = [
-    gfm(),
-  ];
+  const plugins = [gfm()];
 
   // 将Markdown内容按段落分割（智能处理列表）
   const splitIntoParagraphs = (markdown: string): string[] => {
-    const lines = markdown.split('\n').map(l => l.trim());
+    const lines = markdown.split('\n').map((l) => l.trim());
     const paragraphs: string[] = [];
     let currentParagraph: string[] = [];
     let inList = false;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // 空行处理
       if (line === '') {
         if (currentParagraph.length > 0 && !inList) {
@@ -98,7 +102,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
       paragraphs.push(currentParagraph.join('\n'));
     }
 
-    return paragraphs.filter(p => p.length > 0);
+    return paragraphs.filter((p) => p.length > 0);
   };
 
   // 将段落进一步切分为句子（列表块/标题保持整体）
@@ -107,19 +111,18 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
     const result: string[] = [];
     for (const para of paragraphs) {
       const trimmed = para.trim();
-      const isSpecialBlock =
-        /^[-*+]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed) || /^#{1,6}\s/.test(trimmed);
+      const isSpecialBlock = /^[-*+]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed) || /^#{1,6}\s/.test(trimmed);
       if (isSpecialBlock) {
         result.push(para);
         continue;
       }
       const parts = trimmed.split(/(?<=[.!?])\s+(?=[A-Z"'])/);
-      parts.forEach(s => {
+      parts.forEach((s) => {
         const t = s.trim();
         if (t.length > 0) result.push(t);
       });
     }
-    return result.filter(s => s.length > 0);
+    return result.filter((s) => s.length > 0);
   };
 
   // 移除Markdown符号，只保留纯文本
@@ -143,13 +146,14 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
   // 将全局 wordTimestamps 与 content blocks 对应，附加 blockIdx/globalIdx/sentIdx
   const enrichedWordData = React.useMemo(() => {
     if (!hasWordTimestamps) return null;
-    const result: Array<WordTimestamp & { blockIdx: number; localIdx: number; globalIdx: number; sentIdx: number }> = [];
+    const result: Array<WordTimestamp & { blockIdx: number; localIdx: number; globalIdx: number; sentIdx: number }> =
+      [];
 
     // Whisper 有时会将多个词合并成一个 token（如 "need $10"），
     // 需要先拆开，按比例分配时间，以避免文本词数与 token 数不匹配导致后续错位
     const flatTokens: WordTimestamp[] = [];
     for (const wt of wordTimestamps!) {
-      const subWords = wt.word.split(/\s+/).filter(s => s.length > 0);
+      const subWords = wt.word.split(/\s+/).filter((s) => s.length > 0);
       if (subWords.length > 1) {
         const duration = (wt.end - wt.start) / subWords.length;
         subWords.forEach((sw, i) => {
@@ -165,7 +169,9 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
     article.content.forEach((block) => {
       const sentences = splitIntoSentences(block.en);
       sentences.forEach((sent, sIdx) => {
-        const wordCount = stripMarkdown(sent).split(/\s+/).filter(w => w.length > 0).length;
+        const wordCount = stripMarkdown(sent)
+          .split(/\s+/)
+          .filter((w) => w.length > 0).length;
         for (let k = 0; k < wordCount; k++) sentIdxMap.push(sIdx);
       });
     });
@@ -173,7 +179,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
     let globalIdx = 0;
     article.content.forEach((block, blockIdx) => {
       const plainText = stripMarkdown(block.en);
-      const words = plainText.split(/\s+/).filter(w => w.length > 0);
+      const words = plainText.split(/\s+/).filter((w) => w.length > 0);
       words.forEach((_, localIdx) => {
         if (globalIdx < flatTokens.length) {
           result.push({
@@ -217,7 +223,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
       const sentences = splitIntoSentences(block.en);
       sentences.forEach((sent, sentIdx) => {
         const plainText = stripMarkdown(sent);
-        const words = plainText.split(/\s+/).filter(w => w.length > 0);
+        const words = plainText.split(/\s+/).filter((w) => w.length > 0);
         const wordCount = words.length;
         tempSentences.push({ blockIdx, sentIdx, text: sent, plainText, wordCount });
       });
@@ -234,30 +240,20 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
       const proportion = sent.wordCount / totalWords;
       const duration = audioDuration * proportion;
       const startTime = accumulatedTime;
-      const endTime = index === tempSentences.length - 1
-        ? audioDuration
-        : accumulatedTime + duration;
+      const endTime = index === tempSentences.length - 1 ? audioDuration : accumulatedTime + duration;
 
       result.push({
         ...sent,
         startTime,
-        endTime
+        endTime,
       });
 
       accumulatedTime = endTime;
     });
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('========== 句子时间分配（降级模式）==========');
-      console.log(`总单词数: ${totalWords}, 音频时长: ${audioDuration}秒`);
-      result.forEach((s, idx) => {
-        console.log(`${idx + 1}. Block${s.blockIdx}-Sent${s.sentIdx}: ${s.startTime.toFixed(1)}-${s.endTime.toFixed(1)}s (${s.wordCount}词)`);
-        console.log(`   ${s.plainText.substring(0, 100)}`);
-      });
-      console.log('=============================================');
-    }
-
     return result;
+    // splitIntoSentences 是无状态纯函数；重算只由文章内容和音频时长触发。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article.content, audioDuration]);
 
   // 根据当前播放时间更新高亮
@@ -266,7 +262,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
 
     if (hasWordTimestamps && enrichedWordData) {
       // 单词级模式：精确匹配（time 在 start~end 内）
-      let activeIdx = enrichedWordData.findIndex(w => time >= w.start && time < w.end);
+      let activeIdx = enrichedWordData.findIndex((w) => time >= w.start && time < w.end);
 
       // 词间空隙时不做回溯，保持空状态（无加粗），已读颜色由 maxReadWordIndexRef 保留
       // 仅对最后一词做特殊处理：音频播完后让它也变色
@@ -299,7 +295,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
     } else {
       // 句子级降级模式
       if (!evalMode) {
-        const activeSent = allParagraphsData.find(s => time >= s.startTime && time < s.endTime);
+        const activeSent = allParagraphsData.find((s) => time >= s.startTime && time < s.endTime);
         if (activeSent) {
           const key = `${activeSent.blockIdx}-${activeSent.sentIdx}`;
           if (key !== activeBlockPara) {
@@ -321,7 +317,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
     if (hasWordTimestamps || !article.audioUrl || audioDuration === 0 || currentAudioTime === 0) {
       return false;
     }
-    const sentence = allParagraphsData.find(s => s.blockIdx === blockIdx && s.sentIdx === sentIdx);
+    const sentence = allParagraphsData.find((s) => s.blockIdx === blockIdx && s.sentIdx === sentIdx);
     if (!sentence) return false;
     return currentAudioTime >= sentence.startTime && currentAudioTime < sentence.endTime;
   };
@@ -352,7 +348,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
 
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
-    recordingStreamRef.current?.getTracks().forEach(t => t.stop());
+    recordingStreamRef.current?.getTracks().forEach((t) => t.stop());
     setRecordingKey(null);
   };
 
@@ -384,12 +380,10 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
       const aligned = alignWords(originalText, transcript);
 
       // 找到该句对应的所有 globalIdx（按顺序）
-      const sentWords = (enrichedWordData ?? []).filter(
-        w => w.blockIdx === bIdx && w.sentIdx === sIdx
-      );
+      const sentWords = (enrichedWordData ?? []).filter((w) => w.blockIdx === bIdx && w.sentIdx === sIdx);
 
       // 更新评测结果（Map 不可变更新）
-      setEvalResultsByGlobalIdx(prev => {
+      setEvalResultsByGlobalIdx((prev) => {
         const next = new Map(prev);
         aligned.forEach((r, i) => {
           const wd = sentWords[i];
@@ -397,8 +391,8 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
         });
         return next;
       });
-    } catch (e: any) {
-      alert(`评测出错：${e?.message ?? '未知错误'}`);
+    } catch (e: unknown) {
+      alert(`评测出错：${e instanceof Error ? e.message : '未知错误'}`);
     } finally {
       setProcessingKey(null);
     }
@@ -431,28 +425,32 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
             onClick={onOpenShelf}
             className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#fff9e8] px-3 py-2 text-xs font-black text-slate-700 transition hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900 xl:hidden"
           >
-            <BookOpen size={15} />书架
+            <BookOpen size={15} />
+            书架
           </button>
           <button
             type="button"
             onClick={onOpenAiSettings}
             className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#fff9e8] px-3 py-2 text-xs font-black text-slate-700 transition hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900"
           >
-            <Settings size={15} />AI 设置
+            <Settings size={15} />
+            AI 设置
           </button>
           <button
             type="button"
             onClick={onOpenQuestionFolder}
             className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#fff9e8] px-3 py-2 text-xs font-black text-slate-700 transition hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900"
           >
-            <Bookmark size={15} />收藏夹
+            <Bookmark size={15} />
+            收藏夹
           </button>
           <button
             type="button"
             onClick={onOpenQuiz}
             className="inline-flex items-center gap-1.5 border-2 border-slate-800 bg-amber-300 px-3 py-2 text-xs font-black text-slate-900 shadow-[2px_2px_0_#7c2d12] transition hover:bg-amber-400"
           >
-            <BookOpenCheck size={15} />开始测验
+            <BookOpenCheck size={15} />
+            开始测验
           </button>
         </div>
       </div>
@@ -463,7 +461,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
           <button
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
-              setEvalMode(v => !v);
+              setEvalMode((v) => !v);
               if (evalMode) setEvalResultsByGlobalIdx(new Map());
             }}
             className={`inline-flex items-center gap-1.5 border-2 px-3 py-1.5 text-xs font-semibold transition-all ${
@@ -477,31 +475,33 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
           </button>
         )}
         <div className="ml-auto inline-flex border-2 border-slate-800 bg-[#e8f0d8] p-1">
-           <button 
-             onClick={() => setViewMode('en')}
-             className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'en' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
-           >
-             English
-           </button>
-           <button 
-             onClick={() => setViewMode('zh')}
-             className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'zh' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
-           >
-             中文
-           </button>
-           <button 
-             onClick={() => setViewMode('bilingual')}
-             className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'bilingual' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
-           >
-             中英对照
-           </button>
+          <button
+            onClick={() => setViewMode('en')}
+            className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'en' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
+          >
+            English
+          </button>
+          <button
+            onClick={() => setViewMode('zh')}
+            className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'zh' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
+          >
+            中文
+          </button>
+          <button
+            onClick={() => setViewMode('bilingual')}
+            className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'bilingual' ? 'bg-amber-300 text-slate-900 shadow-[1px_1px_0_#7c2d12]' : 'text-slate-600 hover:bg-[#fff9e8] hover:text-slate-900'}`}
+          >
+            中英对照
+          </button>
         </div>
-      </div> {/* end flex justify-between */}
-
+      </div>{' '}
+      {/* end flex justify-between */}
       {/* Article Header */}
       <header className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${difficultyColors[article.difficulty]}`}>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${difficultyColors[article.difficulty]}`}
+          >
             {DIFFICULTY_LABELS[article.difficulty]}
           </span>
           <span className="flex items-center text-xs text-slate-500">
@@ -509,27 +509,29 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
             {article.date}
           </span>
         </div>
-        
+
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight mb-2 font-serif">
           {(viewMode === 'en' || viewMode === 'bilingual') && <div className="mb-2">{article.title.en}</div>}
-          {(viewMode === 'zh' || viewMode === 'bilingual') && <div className={viewMode === 'bilingual' ? 'text-3xl text-slate-700' : ''}>{article.title.zh}</div>}
+          {(viewMode === 'zh' || viewMode === 'bilingual') && (
+            <div className={viewMode === 'bilingual' ? 'text-3xl text-slate-700' : ''}>{article.title.zh}</div>
+          )}
         </h1>
-        
+
         <div className="mt-4 border-l-4 border-emerald-600 py-2 pl-4 text-xl italic text-slate-600">
           {(viewMode === 'en' || viewMode === 'bilingual') && <p className="mb-2">{article.summary.en}</p>}
-          {(viewMode === 'zh' || viewMode === 'bilingual') && <p className={viewMode === 'bilingual' ? 'text-lg text-slate-500' : ''}>{article.summary.zh}</p>}
+          {(viewMode === 'zh' || viewMode === 'bilingual') && (
+            <p className={viewMode === 'bilingual' ? 'text-lg text-slate-500' : ''}>{article.summary.zh}</p>
+          )}
         </div>
       </header>
-
       {/* Sticky Audio Player on Mobile, or Inline on Desktop */}
       <div className="sticky top-2 z-20 mb-8 border-2 border-slate-800 bg-[#fff9e8] p-2 shadow-[3px_3px_0_#d7b958] md:static md:border-none md:bg-transparent md:p-0 md:shadow-none">
-         <AudioPlayer 
-           src={article.audioUrl} 
-           onTimeUpdate={updateActiveBlock}
-           onDurationChange={setActualAudioDuration}
-         />
+        <AudioPlayer
+          src={article.audioUrl}
+          onTimeUpdate={updateActiveBlock}
+          onDurationChange={setActualAudioDuration}
+        />
       </div>
-
       {/* Article Content */}
       <article className="prose prose-slate prose-xl max-w-none font-serif text-slate-800 mb-10 leading-relaxed">
         {article.content.map((block, blockIdx) => {
@@ -538,9 +540,9 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
           // 单词级渲染：该 block 的所有单词渲染成 span，播到哪个词高亮哪个
           const renderWordLevel = () => {
             if (!enrichedWordData) return null;
-            const blockWords = enrichedWordData.filter(w => w.blockIdx === blockIdx);
+            const blockWords = enrichedWordData.filter((w) => w.blockIdx === blockIdx);
             const plainText = stripMarkdown(block.en);
-            const tokens = plainText.split(/(\s+)/).filter(t => t !== '');
+            const tokens = plainText.split(/(\s+)/).filter((t) => t !== '');
 
             // ── 按 sentIdx 分组 tokens ──
             type TokenEntry = { token: string; globalIdx: number; isSpace: boolean };
@@ -549,20 +551,26 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
             let wc = 0;
             const pending: string[] = [];
 
-            tokens.forEach(token => {
-              if (/^\s+$/.test(token)) { pending.push(token); return; }
+            tokens.forEach((token) => {
+              if (/^\s+$/.test(token)) {
+                pending.push(token);
+                return;
+              }
               const wd = blockWords[wc++];
               const sIdx = wd?.sentIdx ?? (groups.length > 0 ? groups[groups.length - 1].sentIdx : 0);
               if (groups.length === 0 || groups[groups.length - 1].sentIdx !== sIdx) {
                 groups.push({ sentIdx: sIdx, sentKey: `${blockIdx}-${sIdx}`, items: [] });
               }
               // 将积压的空白加到当前句的开头（词间换行）
-              pending.forEach(s => groups[groups.length - 1].items.push({ token: s, globalIdx: -1, isSpace: true }));
+              pending.forEach((s) => groups[groups.length - 1].items.push({ token: s, globalIdx: -1, isSpace: true }));
               pending.length = 0;
               groups[groups.length - 1].items.push({ token, globalIdx: wd?.globalIdx ?? -1, isSpace: false });
             });
             // 结尾空白归入最后一句
-            pending.forEach(s => groups.length > 0 && groups[groups.length - 1].items.push({ token: s, globalIdx: -1, isSpace: true }));
+            pending.forEach(
+              (s) =>
+                groups.length > 0 && groups[groups.length - 1].items.push({ token: s, globalIdx: -1, isSpace: true }),
+            );
 
             return (
               <div
@@ -578,100 +586,113 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
                   let prevWasHeading = false;
                   const allSentences = splitIntoSentences(block.en);
                   return groups.map(({ sentIdx, sentKey, items }) => {
-                  const isRecording = recordingKey === sentKey;
-                  const isProcessing = processingKey === sentKey;
-                  const hasEval = items.some(it => !it.isSpace && evalResultsByGlobalIdx.has(it.globalIdx));
+                    const isRecording = recordingKey === sentKey;
+                    const isProcessing = processingKey === sentKey;
+                    const hasEval = items.some((it) => !it.isSpace && evalResultsByGlobalIdx.has(it.globalIdx));
 
-                  const rawSent = (allSentences[sentIdx] ?? '').trim();
-                  const isHeading = /^#{1,6}\s/.test(rawSent);
-                  const headingLevel = rawSent.match(/^(#{1,6})/)?.[1].length ?? 0;
-                  const skipLeadingBr = prevWasHeading; // 紧跟标题后的 group 跳过开头换行
-                  prevWasHeading = isHeading;           // 更新给下一次迭代用
-                  const showMicButton = evalMode;
-                  // 标题样式
-                  const headingClass =
-                    headingLevel === 1 ? 'block font-bold text-3xl mt-4' :
-                    headingLevel === 2 ? 'block font-bold text-2xl mt-3' :
-                    headingLevel >= 3 ? 'block font-bold text-xl mt-2' : '';
-                  const score = hasEval
-                    ? (() => {
-                        const wordItems = items.filter(it => !it.isSpace && it.globalIdx >= 0);
-                        const correct = wordItems.filter(it => evalResultsByGlobalIdx.get(it.globalIdx) === 'correct').length;
-                        return `${correct}/${wordItems.length}`;
-                      })()
-                    : null;
+                    const rawSent = (allSentences[sentIdx] ?? '').trim();
+                    const isHeading = /^#{1,6}\s/.test(rawSent);
+                    const headingLevel = rawSent.match(/^(#{1,6})/)?.[1].length ?? 0;
+                    const skipLeadingBr = prevWasHeading; // 紧跟标题后的 group 跳过开头换行
+                    prevWasHeading = isHeading; // 更新给下一次迭代用
+                    const showMicButton = evalMode;
+                    // 标题样式
+                    const headingClass =
+                      headingLevel === 1
+                        ? 'block font-bold text-3xl mt-4'
+                        : headingLevel === 2
+                          ? 'block font-bold text-2xl mt-3'
+                          : headingLevel >= 3
+                            ? 'block font-bold text-xl mt-2'
+                            : '';
+                    const score = hasEval
+                      ? (() => {
+                          const wordItems = items.filter((it) => !it.isSpace && it.globalIdx >= 0);
+                          const correct = wordItems.filter(
+                            (it) => evalResultsByGlobalIdx.get(it.globalIdx) === 'correct',
+                          ).length;
+                          return `${correct}/${wordItems.length}`;
+                        })()
+                      : null;
 
-                  let leadingBrSkipped = false; // 每个 group 独立追踪是否已跳过开头换行
-                  return (
-                    <span key={sentIdx} className={isHeading ? headingClass : 'inline'}>
-                      {items.map((item, ii) => {
-                        // 换行符保留为 <br>，还原段落/列表的视觉结构
-                        if (item.isSpace) {
-                          // 紧跟标题后的第一个换行跳过，避免"标题换行 + <br>"双重间距
-                          if (skipLeadingBr && !leadingBrSkipped && item.token.includes('\n')) {
+                    let leadingBrSkipped = false; // 每个 group 独立追踪是否已跳过开头换行
+                    return (
+                      <span key={sentIdx} className={isHeading ? headingClass : 'inline'}>
+                        {items.map((item, ii) => {
+                          // 换行符保留为 <br>，还原段落/列表的视觉结构
+                          if (item.isSpace) {
+                            // 紧跟标题后的第一个换行跳过，避免"标题换行 + <br>"双重间距
+                            if (skipLeadingBr && !leadingBrSkipped && item.token.includes('\n')) {
+                              leadingBrSkipped = true;
+                              return null;
+                            }
                             leadingBrSkipped = true;
-                            return null;
+                            return item.token.includes('\n') ? <br key={ii} /> : <span key={ii}> </span>;
                           }
                           leadingBrSkipped = true;
-                          return item.token.includes('\n')
-                            ? <br key={ii} />
-                            : <span key={ii}> </span>;
-                        }
-                        leadingBrSkipped = true;
-                        const { globalIdx } = item;
-                        const isCurrent = activeWordIndex === globalIdx;
-                        const hasBeenRead = globalIdx >= 0 && globalIdx <= maxReadWordIndexRef.current;
-                        const evalStatus = evalResultsByGlobalIdx.get(globalIdx);
+                          const { globalIdx } = item;
+                          const isCurrent = activeWordIndex === globalIdx;
+                          const hasBeenRead = globalIdx >= 0 && globalIdx <= maxReadWordIndexRef.current;
+                          const evalStatus = evalResultsByGlobalIdx.get(globalIdx);
 
-                        let color: string;
-                        let textDecoration = 'none';
-                        if (evalStatus === 'correct') color = '#22c55e';
-                        else if (evalStatus === 'substituted') color = '#f59e0b';
-                        else if (evalStatus === 'deleted') { color = '#ef4444'; textDecoration = 'line-through'; }
-                        else color = hasBeenRead ? '#14896d' : '#aab69b';
+                          let color: string;
+                          let textDecoration = 'none';
+                          if (evalStatus === 'correct') color = '#22c55e';
+                          else if (evalStatus === 'substituted') color = '#f59e0b';
+                          else if (evalStatus === 'deleted') {
+                            color = '#ef4444';
+                            textDecoration = 'line-through';
+                          } else color = hasBeenRead ? '#14896d' : '#aab69b';
 
-                        return (
-                          <span
-                            key={ii}
-                            className="transition-all duration-300 ease-out"
-                            style={{ color, fontWeight: isCurrent ? 600 : undefined, textDecoration }}
+                          return (
+                            <span
+                              key={ii}
+                              className="transition-all duration-300 ease-out"
+                              style={{ color, fontWeight: isCurrent ? 600 : undefined, textDecoration }}
+                            >
+                              {item.token}
+                            </span>
+                          );
+                        })}
+
+                        {/* 跟读按钮（跟读模式开启，且句子足够长时显示） */}
+                        {showMicButton && (
+                          <button
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => (isRecording ? stopRecording() : startRecording(sentKey))}
+                            disabled={isProcessing || (recordingKey !== null && !isRecording)}
+                            title={isRecording ? '点击停止录音' : '点击开始跟读这句话'}
+                            className={`inline-flex items-center gap-1 ml-1.5 border-2 px-2 py-0.5 text-xs font-medium transition-all align-middle ${
+                              isRecording
+                                ? 'border-[#b94d3c] bg-[#e77e65] text-white animate-pulse cursor-pointer'
+                                : isProcessing
+                                  ? 'border-slate-300 bg-slate-200 text-slate-400 cursor-wait'
+                                  : recordingKey !== null && !isRecording
+                                    ? 'border-slate-200 bg-slate-100 text-slate-300 cursor-not-allowed'
+                                    : hasEval
+                                      ? 'border-emerald-700 bg-[#e2f3d0] text-emerald-900 hover:bg-[#cfeab5] cursor-pointer'
+                                      : 'border-slate-500 bg-[#fff9e8] text-slate-600 hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900 cursor-pointer'
+                            }`}
                           >
-                            {item.token}
-                          </span>
-                        );
-                      })}
-
-                      {/* 跟读按钮（跟读模式开启，且句子足够长时显示） */}
-                      {showMicButton && (
-                        <button
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => isRecording ? stopRecording() : startRecording(sentKey)}
-                          disabled={isProcessing || (recordingKey !== null && !isRecording)}
-                          title={isRecording ? '点击停止录音' : '点击开始跟读这句话'}
-                          className={`inline-flex items-center gap-1 ml-1.5 border-2 px-2 py-0.5 text-xs font-medium transition-all align-middle ${
-                            isRecording
-                              ? 'border-[#b94d3c] bg-[#e77e65] text-white animate-pulse cursor-pointer'
-                            : isProcessing
-                              ? 'border-slate-300 bg-slate-200 text-slate-400 cursor-wait'
-                            : (recordingKey !== null && !isRecording)
-                              ? 'border-slate-200 bg-slate-100 text-slate-300 cursor-not-allowed'
-                            : hasEval
-                              ? 'border-emerald-700 bg-[#e2f3d0] text-emerald-900 hover:bg-[#cfeab5] cursor-pointer'
-                              : 'border-slate-500 bg-[#fff9e8] text-slate-600 hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900 cursor-pointer'
-                          }`}
-                        >
-                          {isRecording
-                            ? <><Square className="w-2.5 h-2.5" /> 停止</>
-                            : isProcessing
-                            ? '分析中…'
-                            : hasEval
-                            ? <><Mic className="w-2.5 h-2.5" /> {score} 重试</>
-                            : <><Mic className="w-2.5 h-2.5" /> 跟读</>
-                          }
-                        </button>
-                      )}
-                    </span>
-                  );
+                            {isRecording ? (
+                              <>
+                                <Square className="w-2.5 h-2.5" /> 停止
+                              </>
+                            ) : isProcessing ? (
+                              '分析中…'
+                            ) : hasEval ? (
+                              <>
+                                <Mic className="w-2.5 h-2.5" /> {score} 重试
+                              </>
+                            ) : (
+                              <>
+                                <Mic className="w-2.5 h-2.5" /> 跟读
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </span>
+                    );
                   });
                 })()}
               </div>
@@ -682,30 +703,36 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
             <div key={blockIdx} className="mb-6">
               {(viewMode === 'en' || viewMode === 'bilingual') && (
                 <div className="mb-2">
-                  {hasWordTimestamps ? renderWordLevel() : (
-                    splitIntoSentences(block.en).map((sent, sentIdx) => {
-                      const isActive = shouldHighlight(blockIdx, sentIdx);
-                      const refKey = `${blockIdx}-${sentIdx}`;
-                      return (
-                        <div
-                          key={sentIdx}
-                          ref={(el) => {
-                            if (el) paragraphRefs.current.set(refKey, el);
-                            else paragraphRefs.current.delete(refKey);
-                          }}
-                          className={`bytemd-viewer transition-all duration-200 ${
-                            isActive ? 'border-l-4 border-amber-500 bg-[#fff4cc] px-2 -mx-2' : ''
-                          }`}
-                        >
-                          <Viewer value={sent} plugins={plugins} />
-                        </div>
-                      );
-                    })
-                  )}
+                  {hasWordTimestamps
+                    ? renderWordLevel()
+                    : splitIntoSentences(block.en).map((sent, sentIdx) => {
+                        const isActive = shouldHighlight(blockIdx, sentIdx);
+                        const refKey = `${blockIdx}-${sentIdx}`;
+                        return (
+                          <div
+                            key={sentIdx}
+                            ref={(el) => {
+                              if (el) paragraphRefs.current.set(refKey, el);
+                              else paragraphRefs.current.delete(refKey);
+                            }}
+                            className={`bytemd-viewer transition-all duration-200 ${
+                              isActive ? 'border-l-4 border-amber-500 bg-[#fff4cc] px-2 -mx-2' : ''
+                            }`}
+                          >
+                            <Viewer value={sent} plugins={plugins} />
+                          </div>
+                        );
+                      })}
                 </div>
               )}
               {(viewMode === 'zh' || viewMode === 'bilingual') && (
-                <div className={viewMode === 'bilingual' ? 'border-l-4 border-emerald-600 bg-[#f3f8e9] p-3 text-base text-slate-600' : ''}>
+                <div
+                  className={
+                    viewMode === 'bilingual'
+                      ? 'border-l-4 border-emerald-600 bg-[#f3f8e9] p-3 text-base text-slate-600'
+                      : ''
+                  }
+                >
                   {zhParagraphs.map((para, paraIdx) => (
                     <div key={paraIdx} className="bytemd-viewer my-1">
                       <Viewer value={para} plugins={plugins} />
@@ -717,7 +744,6 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
           );
         })}
       </article>
-
       <button
         type="button"
         onClick={onOpenQuiz}
@@ -727,7 +753,6 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
         <BookOpenCheck size={17} />
         <span className="[writing-mode:vertical-rl]">测验</span>
       </button>
-
       {/* Action Footer */}
       <div className="fixed bottom-20 left-0 right-0 px-4 md:static md:px-0">
         <button
@@ -745,21 +770,18 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
               已完成
             </>
           ) : (
-            <>
-              标记为已完成
-            </>
+            <>标记为已完成</>
           )}
         </button>
       </div>
-
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-            {/* Simple CSS animation for "confetti" or celebration feedback */}
-            <div className="border-2 border-slate-800 bg-[#fff9e8] p-6 text-center shadow-[4px_4px_0_#7c2d12] animate-bounce">
-                <Trophy className="w-12 h-12 text-amber-500 mx-auto mb-2" />
-                <h3 className="text-xl font-bold text-emerald-900">太棒了！</h3>
-                <p className="text-slate-500">文章学习已完成。</p>
-            </div>
+          {/* Simple CSS animation for "confetti" or celebration feedback */}
+          <div className="border-2 border-slate-800 bg-[#fff9e8] p-6 text-center shadow-[4px_4px_0_#7c2d12] animate-bounce">
+            <Trophy className="w-12 h-12 text-amber-500 mx-auto mb-2" />
+            <h3 className="text-xl font-bold text-emerald-900">太棒了！</h3>
+            <p className="text-slate-500">文章学习已完成。</p>
+          </div>
         </div>
       )}
     </div>

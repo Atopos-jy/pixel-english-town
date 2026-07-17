@@ -1,35 +1,34 @@
-'use client'
+'use client';
 
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useEffect } from 'react'
-import { LayoutDashboard, FileText, Users, LogOut } from 'lucide-react'
-import { signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useEffect } from 'react';
+import { LayoutDashboard, FileText, Users, LogOut } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 interface AdminLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     // 如果未登录或不是管理员，重定向到首页
-    if (status === 'loading') return
+    if (status === 'loading') return;
 
     if (!session || !session.user) {
-      router.push('/')
-      return
+      router.push('/');
+      return;
     }
 
-    // @ts-ignore
     if (session.user.role !== 'admin') {
-      router.push('/')
-      return
+      router.push('/');
+      return;
     }
-  }, [session, status, router])
+  }, [session, status, router]);
 
   // 加载中或未授权时不显示内容
   if (status === 'loading') {
@@ -37,17 +36,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600">加载中...</div>
       </div>
-    )
+    );
   }
 
-  // @ts-ignore
   if (!session || !session.user || session.user.role !== 'admin') {
-    return null
+    return null;
   }
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' })
-  }
+    await signOut({ callbackUrl: '/' });
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -96,5 +94,5 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* 主内容区域 */}
       <main className="ml-64 p-8">{children}</main>
     </div>
-  )
+  );
 }
