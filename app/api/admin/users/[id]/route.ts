@@ -90,7 +90,7 @@ export async function DELETE(
     }
 
     // 检查是否尝试删除自己的账户
-    if (authResult.user.id === id) {
+    if (authResult.session?.user.id === id) {
       return NextResponse.json(
         { error: '不能删除自己的账户' },
         { status: 400 }

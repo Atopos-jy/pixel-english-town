@@ -5,8 +5,6 @@ import { DIFFICULTY_LABELS } from '../constants';
 import { CheckCircle2, Calendar, Trophy, Mic, Square, BookOpen, BookOpenCheck, Settings } from 'lucide-react';
 import { Viewer } from '@bytemd/react';
 import gfm from '@bytemd/plugin-gfm';
-import 'bytemd/dist/index.css';
-import '../app/bytemd-custom.css';
 import { alignWords, WordStatus } from '../lib/textDiff';
 
 interface ArticleReaderProps {

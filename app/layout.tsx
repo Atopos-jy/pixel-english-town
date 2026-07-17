@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import 'bytemd/dist/index.css';
+import './bytemd-custom.css';
+import './globals.css';
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
