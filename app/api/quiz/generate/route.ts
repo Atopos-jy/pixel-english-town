@@ -5,6 +5,26 @@ import { takeAiRequestSlot } from '@/lib/ai/rate-limit';
 import { prisma } from '@/lib/prisma';
 import { startQuizGenerationJob } from '@/lib/ai/quiz-generation-jobs';
 
+export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: '请先登录。' }, { status: 401 });
+
+  const userId = (session.user as { id?: string } | undefined)?.id;
+  if (!userId) return NextResponse.json({ error: '无法识别当前用户。' }, { status: 401 });
+
+  const articleId = req.nextUrl.searchParams.get('articleId');
+  if (!articleId) return NextResponse.json({ error: '缺少文章内容。' }, { status: 400 });
+
+  const job = await prisma.quizGenerationJob.findFirst({
+    where: { userId, articleId, status: { in: ['pending', 'processing', 'ready'] } },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!job) return NextResponse.json({ job: null });
+
+  if (job.status === 'pending' || job.status === 'processing') startQuizGenerationJob(job.id);
+  return NextResponse.json({ job: { id: job.id, status: job.status } });
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: '请先登录。' }, { status: 401 });

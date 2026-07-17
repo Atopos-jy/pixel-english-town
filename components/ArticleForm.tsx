@@ -177,6 +177,8 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
       if (calculatedDuration <= 0) {
         throw new Error('请添加英文内容以计算阅读时长');
       }
+      // 优先保存音频文件读取到的真实时长；若浏览器无法读取音频元数据，则使用阅读时长兜底，避免首次创建文章因 0 秒时长被拒绝。
+      const durationSeconds = formData.durationSeconds > 0 ? formData.durationSeconds : calculatedDuration;
 
       const url = mode === 'create' 
         ? '/api/admin/articles'
@@ -189,7 +191,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, durationSeconds }),
       });
 
       if (!response.ok) {

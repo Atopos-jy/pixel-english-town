@@ -19,7 +19,7 @@ async function processQuizGenerationJob(jobId: string) {
       where: { id: jobId },
       include: { article: true },
     });
-    if (!job || job.status === 'completed' || job.status === 'failed') return;
+    if (!job || (job.status !== 'pending' && job.status !== 'processing')) return;
 
     await prisma.quizGenerationJob.update({ where: { id: job.id }, data: { status: 'processing', error: null } });
 
@@ -56,7 +56,7 @@ async function processQuizGenerationJob(jobId: string) {
       })),
       prisma.quizGenerationJob.update({
         where: { id: job.id },
-        data: { status: 'completed', completedAt: new Date() },
+        data: { status: 'ready', completedAt: new Date() },
       }),
     ]);
   } catch (error) {

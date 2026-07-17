@@ -13,6 +13,11 @@ import { getArticles, markArticleComplete } from '@/services/storageService';
 import { useProgress } from '@/contexts/ProgressContext';
 import { Article, PublicQuizQuestion } from '@/types';
 
+type QuizGenerationJob = {
+  id: string;
+  articleTitle: string;
+};
+
 export default function LearnPage() {
   const { status } = useSession();
   const { progress, loading: progressLoading, refreshProgress } = useProgress();
@@ -22,7 +27,9 @@ export default function LearnPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
-  const [quizGenerationJob, setQuizGenerationJob] = useState<{ id: string; articleId: string } | null>(null);
+  const [isQuizCloseConfirmOpen, setIsQuizCloseConfirmOpen] = useState(false);
+  const [pendingArticle, setPendingArticle] = useState<Article | null>(null);
+  const [quizGenerationJobs, setQuizGenerationJobs] = useState<Record<string, QuizGenerationJob>>({});
   const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
   const [isShelfOpen, setIsShelfOpen] = useState(false);
   const [isQuestionFolderOpen, setIsQuestionFolderOpen] = useState(false);
@@ -65,37 +72,50 @@ export default function LearnPage() {
   }, [notice]);
 
   useEffect(() => {
-    if (!quizGenerationJob) return;
+    const jobEntries = Object.entries(quizGenerationJobs);
+    if (!jobEntries.length) return;
     let stopped = false;
     let timeoutId: number | undefined;
 
-    const checkJob = async () => {
-      try {
-        const response = await fetch(`/api/quiz/generate/${quizGenerationJob.id}`);
-        const data = await response.json();
-        if (!response.ok || stopped) return;
-        if (data.job.status === 'completed') {
-          setQuizGenerationJob(null);
-          if (!isQuizOpen) setNotice('AI 题目已生成完成，可以开始测验。');
-          return;
+    const checkJobs = async () => {
+      const results = await Promise.all(jobEntries.map(async ([articleId, job]) => {
+        try {
+          const response = await fetch(`/api/quiz/generate/${job.id}`);
+          const data = await response.json();
+          if (!response.ok || !data.job || !['ready', 'failed'].includes(data.job.status)) return null;
+          return { articleId, job, status: data.job.status as 'ready' | 'failed', error: data.job.error as string | null };
+        } catch {
+          // 网络暂时不可用时保留任务，下一轮继续查询。
+          return null;
         }
-        if (data.job.status === 'failed') {
-          setQuizGenerationJob(null);
-          setNotice(`AI 出题失败：${data.job.error || '请稍后重试。'}`);
-          return;
+      }));
+      if (stopped) return;
+
+      const finishedJobs = results.filter((result): result is NonNullable<typeof result> => result !== null);
+      if (finishedJobs.length) {
+        setQuizGenerationJobs((current) => {
+          const next = { ...current };
+          finishedJobs.forEach(({ articleId, job }) => {
+            if (next[articleId]?.id === job.id) delete next[articleId];
+          });
+          return next;
+        });
+        if (!isQuizOpen) {
+          const notices = finishedJobs.map(({ job, status, error }) => (
+            status === 'ready' ? `《${job.articleTitle}》题目已生成完成。` : `《${job.articleTitle}》AI 出题失败：${error || '请稍后重试。'}`
+          ));
+          setNotice(notices.join(' '));
         }
-      } catch {
-        // 网络暂时不可用时保留任务，下一轮继续查询。
       }
-      if (!stopped) timeoutId = window.setTimeout(checkJob, 2000);
+      if (!stopped) timeoutId = window.setTimeout(checkJobs, 2000);
     };
 
-    void checkJob();
+    void checkJobs();
     return () => {
       stopped = true;
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [isQuizOpen, quizGenerationJob]);
+  }, [isQuizOpen, quizGenerationJobs]);
 
   if (status === 'loading' || loading || progressLoading) return <Loading />;
 
@@ -113,18 +133,28 @@ export default function LearnPage() {
     );
   };
 
+  const closeQuiz = () => {
+    setIsQuizOpen(false);
+    setIsQuizActive(false);
+  };
+
   const requestCloseQuiz = () => {
-    if (isQuizActive && !window.confirm('关闭后本次未完成的测验不会保存，确定关闭吗？')) {
+    if (isQuizActive) {
+      setIsQuizCloseConfirmOpen(true);
       return false;
     }
 
-    setIsQuizOpen(false);
-    setIsQuizActive(false);
+    closeQuiz();
     return true;
   };
 
   const chooseArticle = (nextArticle: Article) => {
     if (nextArticle.id === article.id) return true;
+    if (isQuizOpen && isQuizActive) {
+      setPendingArticle(nextArticle);
+      setIsQuizCloseConfirmOpen(true);
+      return false;
+    }
     if (isQuizOpen && !requestCloseQuiz()) return false;
     setArticle(nextArticle);
     return true;
@@ -218,10 +248,15 @@ export default function LearnPage() {
       {isQuizOpen && (
         <QuizDrawer
           article={article}
-          activeGenerationJobId={quizGenerationJob?.articleId === article.id ? quizGenerationJob.id : null}
+          activeGenerationJobId={quizGenerationJobs[article.id]?.id || null}
           onRequestClose={requestCloseQuiz}
           onActivityChange={setIsQuizActive}
-          onGenerationJobChange={(jobId) => setQuizGenerationJob(jobId ? { id: jobId, articleId: article.id } : null)}
+          onGenerationJobChange={(jobId) => setQuizGenerationJobs((current) => {
+            const next = { ...current };
+            if (jobId) next[article.id] = { id: jobId, articleTitle: article.title.zh };
+            else delete next[article.id];
+            return next;
+          })}
         />
       )}
 
@@ -299,6 +334,37 @@ export default function LearnPage() {
           <button type="button" onClick={() => setNotice(null)} aria-label="关闭提示" className="-mr-1 -mt-1 border-2 border-slate-800 bg-[#fff9e8] p-0.5 text-slate-800 transition hover:bg-[#fff4cc]">
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {isQuizCloseConfirmOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/30 p-4" role="dialog" aria-modal="true" aria-labelledby="quiz-close-confirm-title">
+          <div className="w-full max-w-md border-2 border-slate-800 bg-[#fff9e8] p-5 shadow-[5px_5px_0_#7d9b68]">
+            <h2 id="quiz-close-confirm-title" className="text-base font-black text-emerald-900">要关闭本次测验吗？</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">答题进度不会保存。AI 正在生成的题目不会受到影响，生成完成后可重新打开测验。</p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => { setIsQuizCloseConfirmOpen(false); setPendingArticle(null); }}
+                className="border-2 border-slate-700 bg-[#fffdf4] px-4 py-2 text-sm font-black text-slate-700 transition hover:bg-[#fff4cc]"
+              >
+                继续测验
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextArticle = pendingArticle;
+                  setIsQuizCloseConfirmOpen(false);
+                  setPendingArticle(null);
+                  closeQuiz();
+                  if (nextArticle) setArticle(nextArticle);
+                }}
+                className="border-2 border-emerald-900 bg-emerald-700 px-4 py-2 text-sm font-black text-white shadow-[2px_2px_0_#14532d] transition hover:bg-emerald-800"
+              >
+                关闭测验
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

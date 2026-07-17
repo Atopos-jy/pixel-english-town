@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: { jobId: stri
       articleId: job.articleId,
       status: job.status,
       error: job.error,
-      questions: job.status === 'completed' ? job.questions.map((question) => ({
+      questions: job.status === 'ready' ? job.questions.map((question) => ({
         id: question.id,
         type: question.type,
         question: question.stem,

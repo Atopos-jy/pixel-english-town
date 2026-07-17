@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     } = body;
 
     // 验证必需字段
-    if (!titleEn || !titleZh || !summaryEn || !summaryZh || !content || !difficulty || !durationSeconds) {
+    if (!titleEn || !titleZh || !summaryEn || !summaryZh || !content || !difficulty) {
       return NextResponse.json(
         { error: '缺少必需字段' },
         { status: 400 }

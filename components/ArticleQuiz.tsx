@@ -24,7 +24,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
   onGenerationJobChange,
 }) => {
   const isPracticeMode = Boolean(initialQuestions?.length);
-  const [phase, setPhase] = useState<QuizPhase>(isPracticeMode ? 'answering' : 'idle');
+  const [phase, setPhase] = useState<QuizPhase>(isPracticeMode ? 'answering' : activeGenerationJobId ? 'loading' : 'idle');
   const [questions, setQuestions] = useState<PublicQuizQuestion[]>(initialQuestions || []);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -48,6 +48,31 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
   }, [activeGenerationJobId, generationJobId]);
 
   useEffect(() => {
+    if (isPracticeMode || generationJobId || phase !== 'idle') return;
+    let stopped = false;
+
+    const restoreLatestJob = async () => {
+      try {
+        const response = await fetch(`/api/quiz/generate?articleId=${encodeURIComponent(articleId)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '无法恢复出题任务。');
+        if (stopped || !data.job) return;
+
+        setGenerationJobId(data.job.id);
+        onGenerationJobChange?.(data.job.id);
+        setPhase('loading');
+      } catch (restoreError) {
+        if (!stopped) setError(restoreError instanceof Error ? restoreError.message : '无法恢复出题任务。');
+      }
+    };
+
+    void restoreLatestJob();
+    return () => {
+      stopped = true;
+    };
+  }, [articleId, generationJobId, isPracticeMode, onGenerationJobChange, phase]);
+
+  useEffect(() => {
     if (!generationJobId) return;
     let stopped = false;
     let timeoutId: number | undefined;
@@ -59,8 +84,12 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
         if (!response.ok) throw new Error(data.error || '无法查询出题进度。');
         if (stopped) return;
 
-        if (data.job.status === 'completed') {
-          setQuestions(data.job.questions || []);
+        if (data.job.status === 'ready') {
+          const startResponse = await fetch(`/api/quiz/generate/${generationJobId}/start`, { method: 'POST' });
+          const startData = await startResponse.json();
+          if (!startResponse.ok) throw new Error(startData.error || '无法开始答题。');
+          if (stopped) return;
+          setQuestions(startData.questions || []);
           setGenerationJobId(null);
           onGenerationJobChange?.(null);
           setPhase('answering');
@@ -230,9 +259,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
         <div className="text-center">
           <div className="text-4xl mb-3">📝</div>
           <h3 className="text-xl font-bold text-slate-800 mb-2">阅读理解测验</h3>
-          <p className="text-slate-500 text-sm max-w-sm">
-            AI 将根据文章内容出题，包含单选、判断和填空题，测试你的阅读理解程度。
-          </p>
+          <p className="text-slate-500 text-sm max-w-sm">AI 将根据文章内容出题，包含单选、判断和填空题，测试你的阅读理解程度。</p>
         </div>
         {error && (
           <div className="border-2 border-[#b94d3c] bg-[#ffe1d6] px-4 py-2 text-sm text-[#9f3426]">{error}</div>
