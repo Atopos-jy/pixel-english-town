@@ -2,6 +2,32 @@
 
 像素风格的英语学习平台 — 阅读、练习、收集徽章，在小镇里开始今天的英语冒险。
 
+## 页面预览
+
+### 登录页
+
+![登录页](docs/assets/images/index.png)
+
+### 小镇与学习广场
+
+![小镇总览](docs/assets/images/overview.png)
+
+![学习广场](docs/assets/images/plaza.png)
+
+### 学习与个人中心
+
+![阅读学习](docs/assets/images/read.png)
+
+![练习测验](docs/assets/images/test.png)
+
+![个人中心](docs/assets/images/my.png)
+
+### 实时功能与问题记录
+
+![Socket 实时功能](docs/assets/images/webSocket.png)
+
+![已知问题](docs/assets/images/problems.png)
+
 ## 技术栈
 
 - **前端**: Next.js 14 + React 18 + TypeScript + Tailwind CSS
