@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { usePathname } from 'next/navigation';
 
-import type { PlazaRealtimeEvent, PlazaSnapshot } from '@/types/plaza';
+import type { PlazaActivity, PlazaRealtimeEvent, PlazaSnapshot } from '@/types/plaza';
 
 type PlazaSnapshotResponse = {
   success: boolean;
@@ -14,6 +14,10 @@ type PlazaSnapshotResponse = {
 
 type OnlineUpdatePayload = {
   count: number;
+};
+
+type PlazaContextValue = PlazaSnapshot & {
+  realtimeActivity: PlazaActivity | null;
 };
 
 const initialState: PlazaSnapshot = {
@@ -26,11 +30,17 @@ const initialState: PlazaSnapshot = {
   version: 0,
 };
 
-const PlazaContext = createContext<PlazaSnapshot>(initialState);
+const initialContextValue: PlazaContextValue = {
+  ...initialState,
+  realtimeActivity: null,
+};
+
+const PlazaContext = createContext<PlazaContextValue>(initialContextValue);
 
 export function PlazaProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [state, setState] = useState<PlazaSnapshot>(initialState);
+  const [realtimeActivity, setRealtimeActivity] = useState<PlazaActivity | null>(null);
 
   useEffect(() => {
     if (pathname !== '/plaza') return;
@@ -72,13 +82,16 @@ export function PlazaProvider({ children }: { children: React.ReactNode }) {
       setState((current) => ({ ...current, onlineCount: count }));
     });
     socket.on('plaza:feed', (event: PlazaRealtimeEvent) => {
-      if (!event.activity) return;
+      const activity = event.activity;
+      if (!activity) return;
+
+      setRealtimeActivity(activity);
       setState((current) => ({
         ...current,
         version: Math.max(current.version, event.version),
-        activities: current.activities.some((activity) => activity.id === event.activity?.id)
+        activities: current.activities.some((currentActivity) => currentActivity.id === activity.id)
           ? current.activities
-          : [event.activity, ...current.activities].slice(0, 50),
+          : [activity, ...current.activities].slice(0, 50),
       }));
     });
     socket.on('plaza:leaderboard-update', () => {
@@ -87,10 +100,11 @@ export function PlazaProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       socket.disconnect();
+      setRealtimeActivity(null);
     };
   }, [pathname]);
 
-  return <PlazaContext.Provider value={state}>{children}</PlazaContext.Provider>;
+  return <PlazaContext.Provider value={{ ...state, realtimeActivity }}>{children}</PlazaContext.Provider>;
 }
 
 export function usePlaza() {

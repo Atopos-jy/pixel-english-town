@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       data: {
         userId: user.id,
         type: PlazaActivityType.ENTER_PLAZA,
-        content: `欢迎 ${user.name || '学习者'} 来到学习广场`,
+        content: `${user.name || '学习者'} 进入了学习广场`,
       },
       include: {
         user: { select: { id: true, name: true } },
