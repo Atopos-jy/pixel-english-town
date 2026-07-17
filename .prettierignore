@@ -1,0 +1,7 @@
+node_modules
+.next
+coverage
+public/images
+prisma/migrations
+*.png
+pnpm-lock.yaml
