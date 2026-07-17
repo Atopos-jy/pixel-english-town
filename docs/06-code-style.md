@@ -472,9 +472,9 @@ type:
 scope: 功能模块（如 广场、文章、后台、认证）
 
 示例:
-  feat(广场): 添加实时在线人数统计
-  fix(文章): 使用事务生成连续编号
-  refactor(认证): 移除 auth.ts 中的 @ts-ignore
+  feat: 添加实时在线人数统计
+  fix: 使用事务生成连续编号
+  refactor: 移除 auth.ts 中的 @ts-ignore
   chore: 添加 ESLint 和 Prettier 配置
 ```
 
