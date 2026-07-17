@@ -1,4 +1,3 @@
-// @ts-ignore
 import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
@@ -19,12 +18,15 @@ process.on('beforeExit', async () => {
 
 // 定期检查连接健康状态（每5分钟）
 if (process.env.NODE_ENV !== 'production') {
-  setInterval(async () => {
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-      console.log('[Prisma] 数据库连接健康');
-    } catch (error) {
-      console.error('[Prisma] 数据库连接异常:', error);
-    }
-  }, 5 * 60 * 1000);
+  setInterval(
+    async () => {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        console.log('[Prisma] 数据库连接健康');
+      } catch (error) {
+        console.error('[Prisma] 数据库连接异常:', error);
+      }
+    },
+    5 * 60 * 1000,
+  );
 }

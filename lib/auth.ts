@@ -1,16 +1,16 @@
-import { AuthOptions } from "next-auth";
-import { getServerSession } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { AuthOptions } from 'next-auth';
+import { getServerSession } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -25,10 +25,7 @@ export const authOptions: AuthOptions = {
           return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
           return null;
@@ -40,14 +37,14 @@ export const authOptions: AuthOptions = {
           name: user.name,
           role: user.role, // 包含用户角色
         };
-      }
-    })
+      },
+    }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
   },
   pages: {
-    signIn: "/",
+    signIn: '/',
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -60,14 +57,12 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
-        // @ts-ignore
         session.user.id = token.id as string;
-        // @ts-ignore
         session.user.role = token.role as string;
       }
       return session;
-    }
-  }
+    },
+  },
 };
 
 /**
@@ -80,21 +75,20 @@ export async function requireAdmin() {
   if (!session || !session.user) {
     return {
       error: 'Unauthorized',
-      status: 401
+      status: 401,
     };
   }
 
-  // @ts-ignore
   if (session.user.role !== 'admin') {
     return {
       error: 'Forbidden - Admin access required',
-      status: 403
+      status: 403,
     };
   }
 
   return {
     session,
     error: null,
-    status: 200
+    status: 200,
   };
 }

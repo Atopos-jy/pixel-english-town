@@ -18,13 +18,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     // 如果未登录或不是管理员，重定向到首页
     if (status === 'loading') return;
-    
+
     if (!session || !session.user) {
       router.push('/');
       return;
     }
 
-    // @ts-ignore
     if (session.user.role !== 'admin') {
       router.push('/');
       return;
@@ -40,7 +39,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  // @ts-ignore
   if (!session || !session.user || session.user.role !== 'admin') {
     return null;
   }
@@ -55,9 +53,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <aside className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-gray-800">管理后台</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {session.user.email}
-          </p>
+          <p className="text-sm text-gray-500 mt-1">{session.user.email}</p>
         </div>
 
         <nav className="mt-6">
@@ -96,9 +92,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* 主内容区域 */}
-      <main className="ml-64 p-8">
-        {children}
-      </main>
+      <main className="ml-64 p-8">{children}</main>
     </div>
   );
 }

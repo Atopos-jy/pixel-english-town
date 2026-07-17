@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -6,10 +7,7 @@ import { prisma } from '@/lib/prisma';
  * POST /api/admin/articles/[id]/transcribe
  * 调用 Whisper API 为文章音频生成逐词时间戳（管理员专用）
  */
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request, { params }: { params: { id: string } }) {
   const authResult = await requireAdmin();
   if (authResult.error) {
     return NextResponse.json({ error: authResult.error }, { status: authResult.status });
@@ -67,10 +65,7 @@ export async function POST(
     if (!whisperResponse.ok) {
       const err = await whisperResponse.json();
       console.error('Whisper API 错误:', err);
-      return NextResponse.json(
-        { error: `Whisper API 调用失败: ${err.error?.message || '未知错误'}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: `Whisper API 调用失败: ${err.error?.message || '未知错误'}` }, { status: 500 });
     }
 
     const transcription = await whisperResponse.json();
@@ -83,15 +78,15 @@ export async function POST(
     // 保存到数据库
     await prisma.article.update({
       where: { id },
-      data: { wordTimestamps: wordTimestamps as any },
+      data: { wordTimestamps: wordTimestamps as Prisma.InputJsonValue },
     });
 
     return NextResponse.json({
       message: '时间戳生成成功',
       wordCount: wordTimestamps.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('生成时间戳失败:', error);
-    return NextResponse.json({ error: error.message || '生成失败' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : '生成失败' }, { status: 500 });
   }
 }

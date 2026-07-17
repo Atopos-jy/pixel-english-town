@@ -21,6 +21,8 @@ model User {
   // 关联用户进度（一对一关系）
   progress  UserProgress?
   aiSetting UserAiSetting?
+  articleCompletions ArticleCompletion[]
+  plazaActivities PlazaActivity[]
   
   @@map("users")
 }
@@ -92,6 +94,51 @@ model Article {
   wordTimestamps  Json?    // 逐词时间戳 [{word, start, end}]，由 Whisper API 生成
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  completions     ArticleCompletion[]
   
   @@map("articles")
+}
+
+model ArticleCompletion {
+  id           String   @id @default(cuid())
+  userId       String
+  articleId    String
+  learningDate String
+  completedAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([learningDate, completedAt])
+  @@map("article_completions")
+}
+
+enum PlazaActivityType {
+  ENTER_PLAZA
+  ARTICLE_COMPLETED
+  BADGE_EARNED
+}
+
+model PlazaActivity {
+  id        String            @id @default(cuid())
+  userId    String
+  type      PlazaActivityType
+  content   String            @db.VarChar(500)
+  metadata  Json?
+  createdAt DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("plaza_activities")
+}
+
+// 文章公开编号序列：在事务中递增，保证并发新建时 art-xxx 不会重复。
+model ArticleIdSequence {
+  name         String   @id
+  currentValue Int
+  updatedAt    DateTime @updatedAt
+
+  @@map("article_id_sequences")
 }

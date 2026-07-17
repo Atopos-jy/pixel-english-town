@@ -50,13 +50,6 @@ export default function HomePage() {
   const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
 
-  // 一旦认证成功，自动跳转到小镇（登录/注册/已有 session 三种情况统一处理）
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.push('/town');
-    }
-  }, [status, router]);
-
   if (status === 'loading') return <Loading />;
 
   const isReturningUser = status === 'authenticated';
@@ -68,7 +61,7 @@ export default function HomePage() {
     <main className="relative min-h-screen overflow-hidden bg-[#f6dfaa] text-white">
       <div
         aria-hidden="true"
-        className={`absolute inset-x-0 top-0 bg-[url('/images/home/come-background-v1.png')] bg-cover bg-center transition-all duration-700 ease-out ${
+        className={`absolute inset-x-0 top-0 bg-[url('/images/home/come-background.png')] bg-cover bg-center transition-all duration-700 ease-out ${
           showAuth ? 'h-[28vh] bg-[position:center_62%]' : 'h-full'
         }`}
       />
@@ -99,14 +92,18 @@ export default function HomePage() {
           </div>
         )}
       </section>
-      {!showAuth && <button
-        onClick={() => isReturningUser ? router.push('/town') : setShowAuth(true)}
-        className="absolute left-1/2 z-20 w-[30%] min-w-[240px] max-w-[505px] -translate-x-1/2 transition duration-150 hover:-translate-y-1 hover:drop-shadow-[0_0_18px_rgba(255,224,111,.95)] focus:outline-none focus:ring-4 focus:ring-amber-200"
-        style={{ bottom: 'calc(12% - 40px)' }}
-        aria-label="点击进入小镇"
-      >
-        <img src="/images/home/enter-town-button-v2.png" alt="点击进入小镇" className="h-auto w-full" />
-      </button>}
+      {!showAuth && (
+        <button
+          onClick={() => (isReturningUser ? router.push('/town') : setShowAuth(true))}
+          className="absolute left-1/2 z-20 w-[30%] min-w-[240px] max-w-[505px] -translate-x-1/2 transition duration-150 hover:-translate-y-1 hover:drop-shadow-[0_0_18px_rgba(255,224,111,.95)] focus:outline-none focus:ring-4 focus:ring-amber-200"
+          style={{ bottom: 'calc(12% - 40px)' }}
+          aria-label="点击进入小镇"
+        >
+          {/* 像素按钮使用原始 PNG 尺寸与硬边渲染，不交给图片优化器重采样。 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/home/enter-town-button.png" alt="点击进入小镇" className="h-auto w-full" />
+        </button>
+      )}
     </main>
   );
 }
