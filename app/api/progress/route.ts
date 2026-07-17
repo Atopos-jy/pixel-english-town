@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withRetry } from '@/lib/db-utils';
 import { Difficulty } from '@/types';
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getServerSession } from 'next-auth';
+import { Prisma } from '@prisma/client';
+import { authOptions } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -13,7 +14,6 @@ export async function GET() {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // @ts-ignore
     const userId = session.user.id;
 
     // Get specific user progress with retry mechanism
@@ -55,17 +55,17 @@ export async function GET() {
     };
 
     return NextResponse.json(formattedProgress);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('获取进度失败:', error);
     
     // 返回更友好的错误信息
-    if (error.code === 'P2024') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2024') {
       return NextResponse.json({ 
         error: '数据库连接池已满，请稍后重试' 
       }, { status: 503 });
     }
     
-    if (error.code === 'P1001') {
+    if (error instanceof Prisma.PrismaClientInitializationError && error.errorCode === 'P1001') {
       return NextResponse.json({ 
         error: '无法连接到数据库服务器' 
       }, { status: 503 });
