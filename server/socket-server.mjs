@@ -1,23 +1,92 @@
 import { createServer } from 'node:http';
-import { loadEnvFile } from 'node:process';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import Redis from 'ioredis';
 import { getToken } from 'next-auth/jwt';
 import { Server } from 'socket.io';
 
-loadEnvFile('.env');
+// 兼容 Node < 22：手动加载 .env 文件（Node 22+ 才有 loadEnvFile）
+function loadEnv() {
+  const envPath = join(process.cwd(), '.env');
+  if (!existsSync(envPath)) {
+    console.warn('[socket] .env 文件不存在，仅使用系统环境变量');
+    return;
+  }
+  const content = readFileSync(envPath, 'utf-8');
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIndex = trimmed.indexOf('=');
+    if (eqIndex === -1) continue;
+    const key = trimmed.slice(0, eqIndex).trim();
+    let value = trimmed.slice(eqIndex + 1).trim();
+    // 去除引号
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    if (!process.env[key]) {
+      process.env[key] = value;
+    }
+  }
+}
+
+loadEnv();
 
 const port = Number(process.env.SOCKET_IO_PORT || 3001);
 const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const allowedOrigins = (process.env.SOCKET_CORS_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+// ---- Redis 连接（必须成功，广场实时功能强依赖 Redis） ----
 const redis = new Redis(redisUrl, {
   maxRetriesPerRequest: 1,
   enableReadyCheck: true,
+  lazyConnect: true,
 });
+
+try {
+  await redis.connect();
+  console.warn('[socket] Redis 连接成功:', redisUrl);
+} catch (error) {
+  console.error('========================================');
+  console.error('[socket] Redis 连接失败，Socket.IO 服务无法启动');
+  console.error('[socket]');
+  console.error('[socket] 请检查 .env 中的 REDIS_URL，当前值:', redisUrl);
+  console.error('[socket]');
+  console.error('[socket] 如果是通过 SSH 隧道连接远程 Redis：');
+  console.error('[socket]   ssh -L 6379:127.0.0.1:6379 user@your-server');
+  console.error('[socket]   然后 .env 中写 REDIS_URL=redis://127.0.0.1:6379');
+  console.error('[socket]');
+  console.error('[socket] 如果是本地 Docker Redis：');
+  console.error('[socket]   docker run -d --name redis -p 6379:6379 redis:7-alpine');
+  console.error('[socket]');
+  console.error('[socket] 错误详情:', error.message);
+  console.error('========================================');
+  process.exit(1);
+}
+
 const subscriber = redis.duplicate({ maxRetriesPerRequest: null });
+
+// ---- HTTP + Socket.IO 服务 ----
 const httpServer = createServer();
 const io = new Server(httpServer, {
   path: '/socket.io/',
-  cors: { origin: /^http:\/\/localhost:\d+$/, credentials: true },
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn('[socket] CORS 拒绝来源:', origin);
+        callback(new Error('Socket.IO CORS origin is not allowed'));
+      }
+    },
+    credentials: true,
+  },
 });
+
+// ---- Redis Lua 脚本：在线状态管理 ----
 const presenceKey = 'plaza:presence';
 const presenceTtlMs = 45_000;
 const presenceRefreshMs = 30_000;
@@ -131,6 +200,7 @@ async function notifyEnterPlaza(userId) {
   }
 }
 
+// ---- 认证中间件 ----
 io.use(async (socket, next) => {
   try {
     const request = {
@@ -161,6 +231,7 @@ io.use(async (socket, next) => {
   }
 });
 
+// ---- 连接处理 ----
 io.on('connection', async (socket) => {
   const userId = socket.data.userId;
   const presenceMember = `${socket.id}|${userId}`;
@@ -201,6 +272,7 @@ io.on('connection', async (socket) => {
   });
 });
 
+// ---- Redis Pub/Sub：跨进程消息广播 ----
 await subscriber.subscribe('plaza:events');
 subscriber.on('message', (_channel, message) => {
   try {

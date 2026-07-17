@@ -211,3 +211,12 @@ model ArticleIdSequence {
 
   @@map("article_id_sequences")
 }
+
+model BadgeConfig {
+  id        String   @id
+  badges    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("badge_configs")
+}

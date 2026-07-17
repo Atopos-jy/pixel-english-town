@@ -11,7 +11,10 @@
     "format:check": "prettier --check .",
     "format:write": "prettier --write .",
     "prepare": "husky",
-    "postinstall": "prisma generate"
+    "postinstall": "npx prisma generate",
+    "db:generate": "npx prisma generate",
+    "db:deploy": "npx prisma migrate deploy",
+    "db:studio": "npx prisma studio"
   },
   "dependencies": {
     "@bytemd/plugin-gfm": "^1.22.0",
