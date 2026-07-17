@@ -31,10 +31,7 @@ export default function PlazaPage() {
   const { onlineCount, activities, leaderboards, realtimeActivity } = usePlaza();
   const [activeLeaderboard, setActiveLeaderboard] = useState<ActiveLeaderboard>('daily');
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
-  const [toast, setToast] = useState<ToastMessage | null>({
-    id: 'local-welcome',
-    content: '欢迎来到学习广场',
-  });
+  const [toast, setToast] = useState<ToastMessage | null>(null);
 
   useEffect(() => {
     if (!realtimeActivity) return;
