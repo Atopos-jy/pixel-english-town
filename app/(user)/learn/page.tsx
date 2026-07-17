@@ -11,7 +11,7 @@ import { ArticleQuestionFolderDrawer } from '@/components/ArticleQuestionFolderD
 import { Loading } from '@/components/Loading';
 import { getArticles, markArticleComplete } from '@/services/storageService';
 import { useProgress } from '@/contexts/ProgressContext';
-import { Article } from '@/types';
+import { Article, PublicQuizQuestion } from '@/types';
 
 export default function LearnPage() {
   const { status } = useSession();
@@ -25,6 +25,7 @@ export default function LearnPage() {
   const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
   const [isShelfOpen, setIsShelfOpen] = useState(false);
   const [isQuestionFolderOpen, setIsQuestionFolderOpen] = useState(false);
+  const [practiceSession, setPracticeSession] = useState<{ questions: PublicQuizQuestion[]; title: string } | null>(null);
   const [aiSettingsDraft, setAiSettingsDraft] = useState<AiSettingsDraft>({
     provider: 'deepseek',
     apiKey: '',
@@ -189,7 +190,28 @@ export default function LearnPage() {
       )}
 
       {isQuestionFolderOpen && (
-        <ArticleQuestionFolderDrawer article={article} onClose={() => setIsQuestionFolderOpen(false)} />
+        <ArticleQuestionFolderDrawer
+          article={article}
+          onClose={() => setIsQuestionFolderOpen(false)}
+          onPractice={(questions, title) => {
+            setIsQuestionFolderOpen(false);
+            setPracticeSession({ questions, title });
+          }}
+        />
+      )}
+
+      {practiceSession && (
+        <QuizDrawer
+          key={practiceSession.questions.map((question) => question.id).join('-')}
+          article={article}
+          initialQuestions={practiceSession.questions}
+          title={practiceSession.title}
+          onRequestClose={() => {
+            setPracticeSession(null);
+            setIsQuizActive(false);
+          }}
+          onActivityChange={setIsQuizActive}
+        />
       )}
 
       {isAiSettingsOpen && (

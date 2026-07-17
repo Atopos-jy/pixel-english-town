@@ -2,16 +2,18 @@
 
 import { useEffect } from 'react';
 import { BookOpenCheck, X } from 'lucide-react';
-import { Article } from '@/types';
+import { Article, PublicQuizQuestion } from '@/types';
 import { ArticleQuiz } from './ArticleQuiz';
 
 interface QuizDrawerProps {
   article: Article;
+  initialQuestions?: PublicQuizQuestion[];
+  title?: string;
   onRequestClose: () => void;
   onActivityChange: (isActive: boolean) => void;
 }
 
-export function QuizDrawer({ article, onRequestClose, onActivityChange }: QuizDrawerProps) {
+export function QuizDrawer({ article, initialQuestions, title = '阅读理解测验', onRequestClose, onActivityChange }: QuizDrawerProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onRequestClose();
@@ -45,7 +47,7 @@ export function QuizDrawer({ article, onRequestClose, onActivityChange }: QuizDr
         <header className="flex items-start justify-between gap-4 border-b-2 border-slate-800 bg-[#e2f3d0] px-5 py-4">
           <div>
             <p className="flex items-center gap-2 text-sm font-black text-emerald-900">
-              <BookOpenCheck size={18} />阅读理解测验
+              <BookOpenCheck size={18} />{title}
             </p>
             <p className="mt-1 line-clamp-1 text-xs font-medium text-slate-600">{article.title.zh}</p>
           </div>
@@ -63,6 +65,7 @@ export function QuizDrawer({ article, onRequestClose, onActivityChange }: QuizDr
           <ArticleQuiz
             articleId={article.id}
             key={article.id}
+            initialQuestions={initialQuestions}
             onClose={onRequestClose}
             onActivityChange={onActivityChange}
           />

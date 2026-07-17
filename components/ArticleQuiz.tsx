@@ -6,15 +6,17 @@ import { Bookmark, CheckCircle2, XCircle, RotateCcw, Trophy, Loader2, ChevronRig
 
 interface ArticleQuizProps {
   articleId: string;
+  initialQuestions?: PublicQuizQuestion[];
   onClose: () => void;
   onActivityChange?: (isActive: boolean) => void;
 }
 
 type QuizPhase = 'idle' | 'loading' | 'answering' | 'finished';
 
-export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleId, onClose, onActivityChange }) => {
-  const [phase, setPhase] = useState<QuizPhase>('idle');
-  const [questions, setQuestions] = useState<PublicQuizQuestion[]>([]);
+export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleId, initialQuestions, onClose, onActivityChange }) => {
+  const isPracticeMode = Boolean(initialQuestions?.length);
+  const [phase, setPhase] = useState<QuizPhase>(isPracticeMode ? 'answering' : 'idle');
+  const [questions, setQuestions] = useState<PublicQuizQuestion[]>(initialQuestions || []);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userAnswer, setUserAnswer] = useState<string>('');
@@ -223,12 +225,14 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleId, onClose, on
         </div>
 
         <div className="flex gap-3">
-          <button
-            onClick={generateQuiz}
-            className="flex items-center gap-1.5 border-2 border-emerald-800 bg-[#e2f3d0] px-4 py-2 text-sm font-medium text-emerald-900 transition-all hover:bg-[#cfeab5]"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> 重新出题
-          </button>
+          {!isPracticeMode && (
+            <button
+              onClick={generateQuiz}
+              className="flex items-center gap-1.5 border-2 border-emerald-800 bg-[#e2f3d0] px-4 py-2 text-sm font-medium text-emerald-900 transition-all hover:bg-[#cfeab5]"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> 重新出题
+            </button>
+          )}
           <button
             onClick={onClose}
             className="border-2 border-slate-700 bg-[#fff9e8] px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-[#fff4cc]"
