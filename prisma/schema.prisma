@@ -21,6 +21,9 @@ model User {
   // 关联用户进度（一对一关系）
   progress  UserProgress?
   aiSetting UserAiSetting?
+  articleQuestions ArticleQuestion[]
+  questionStates   UserQuestionState[]
+  quizGenerationJobs QuizGenerationJob[]
   articleCompletions ArticleCompletion[]
   plazaActivities PlazaActivity[]
   
@@ -94,9 +97,75 @@ model Article {
   wordTimestamps  Json?    // 逐词时间戳 [{word, start, end}]，由 Whisper API 生成
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  questions       ArticleQuestion[]
+  quizGenerationJobs QuizGenerationJob[]
   completions     ArticleCompletion[]
   
   @@map("articles")
+}
+
+model ArticleQuestion {
+  id              String   @id @default(cuid())
+  articleId       String
+  createdByUserId String
+  type            String
+  stem            String   @db.Text
+  options         Json?
+  correctAnswer   String   @db.Text
+  explanation     String   @db.Text
+  knowledgePoints Json     @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  article         Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdByUser   User     @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  userStates      UserQuestionState[]
+  generationJobId String?
+  generationJob   QuizGenerationJob? @relation(fields: [generationJobId], references: [id], onDelete: SetNull)
+
+  @@index([articleId, createdByUserId])
+  @@index([generationJobId])
+  @@map("article_questions")
+}
+
+model QuizGenerationJob {
+  id          String   @id @default(cuid())
+  userId      String
+  articleId   String
+  status      String   @default("pending")
+  error       String?  @db.Text
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  questions   ArticleQuestion[]
+
+  @@index([userId, articleId, status])
+  @@map("quiz_generation_jobs")
+}
+
+model UserQuestionState {
+  id             String          @id @default(cuid())
+  userId         String
+  questionId     String
+  isBookmarked   Boolean         @default(false)
+  attemptCount   Int             @default(0)
+  correctCount   Int             @default(0)
+  wrongCount     Int             @default(0)
+  lastAnswer     String?         @db.Text
+  lastAnsweredAt DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question       ArticleQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, isBookmarked])
+  @@index([userId, wrongCount])
+  @@map("user_question_states")
 }
 
 model ArticleCompletion {

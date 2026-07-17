@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getQuizProvider, isSupportedAiConfiguration } from '@/lib/ai/quiz-provider';
+import { getAiConfigurationValidationError, getQuizProvider, isSupportedAiConfiguration } from '@/lib/ai/quiz-provider';
 import { takeAiRequestSlot } from '@/lib/ai/rate-limit';
 import { getStoredAiConfiguration } from '@/lib/ai/settings';
 
@@ -19,6 +19,10 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const directConfiguration = body?.configuration;
+  const directConfigurationError = getAiConfigurationValidationError(directConfiguration);
+  if (directConfiguration && directConfigurationError) {
+    return NextResponse.json({ error: directConfigurationError }, { status: 400 });
+  }
   let configuration;
   try {
     configuration = isSupportedAiConfiguration(directConfiguration)

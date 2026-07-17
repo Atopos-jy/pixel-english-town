@@ -34,7 +34,7 @@ const parseQuestions = (raw: string): QuizQuestion[] => {
 
   const validTypes = new Set(['multiple_choice', 'true_false', 'fill_blank']);
   const isValid = questions.every((question) => {
-    if (!question || !validTypes.has(question.type) || typeof question.question !== 'string' || typeof question.answer !== 'string' || typeof question.explanation !== 'string') {
+    if (!question || !validTypes.has(question.type) || typeof question.question !== 'string' || typeof question.answer !== 'string' || typeof question.explanation !== 'string' || !Array.isArray(question.knowledgePoints) || !question.knowledgePoints.every((point: unknown) => typeof point === 'string')) {
       return false;
     }
     return question.type !== 'multiple_choice' || (Array.isArray(question.options) && question.options.length === 4);
@@ -93,12 +93,22 @@ class OpenAiCompatibleQuizProvider implements AiQuizProvider {
 
   async generateQuiz(configuration: AiConfiguration, input: QuizGenerationInput) {
     const questionCount = getQuestionCount(input.difficulty);
-    const systemPrompt = `You generate English reading-comprehension quizzes. Return JSON only, with no markdown. Return this exact object shape: {"questions":[...]}. Generate ${questionCount} questions that are answerable solely from the article. Include at least 2 multiple_choice questions, 1 true_false question, and 1 fill_blank question. Each multiple_choice question must contain exactly four options prefixed A. through D. Question schema: {"type":"multiple_choice"|"true_false"|"fill_blank","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"...","explanation":"..."}.`;
-    const content = await this.chat(configuration, [
+    const systemPrompt = `You generate English reading-comprehension quizzes. Return JSON only, with no markdown. Return this exact object shape: {"questions":[...]}. Generate ${questionCount} questions that are answerable solely from the article. Include at least 2 multiple_choice questions, 1 true_false question, and 1 fill_blank question. Each multiple_choice question must contain exactly four options prefixed A. through D. Add one to three knowledgePoints to every question, selected only from: vocabulary_context, detail_location, main_idea, inference, tense, grammar_structure. Question schema: {"type":"multiple_choice"|"true_false"|"fill_blank","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"...","explanation":"...","knowledgePoints":["..."]}.`;
+    const messages: Array<{ role: 'system' | 'user'; content: string }> = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: `Article:\n${input.articleText}` },
-    ], 2048);
-    return parseQuestions(content);
+    ];
+    const content = await this.chat(configuration, messages, 4096);
+
+    try {
+      return parseQuestions(content);
+    } catch {
+      const retryContent = await this.chat(configuration, [
+        { role: 'system', content: `${systemPrompt} Your previous response was invalid. Return a complete, compact JSON object only.` },
+        messages[1],
+      ], 4096);
+      return parseQuestions(retryContent);
+    }
   }
 }
 
@@ -109,12 +119,23 @@ const providers: Record<AiProviderId, AiQuizProvider> = {
 
 export const getQuizProvider = (provider: AiProviderId) => providers[provider];
 
-export const isSupportedAiConfiguration = (value: unknown): value is AiConfiguration => {
-  if (!value || typeof value !== 'object') return false;
+export const getAiConfigurationValidationError = (value: unknown): string | null => {
+  if (!value || typeof value !== 'object') return 'AI 厂商、模型或 API Key 无效。';
   const configuration = value as AiConfiguration;
-  return (configuration.provider === 'deepseek' || configuration.provider === 'mimo')
-    && typeof configuration.apiKey === 'string'
-    && configuration.apiKey.trim().length >= 8
-    && typeof configuration.model === 'string'
-    && supportedModels[configuration.provider].includes(configuration.model);
+  if (configuration.provider !== 'deepseek' && configuration.provider !== 'mimo') {
+    return 'AI 厂商、模型或 API Key 无效。';
+  }
+  if (typeof configuration.apiKey !== 'string' || configuration.apiKey.trim().length < 8) {
+    return 'AI 厂商、模型或 API Key 无效。';
+  }
+  if (configuration.provider === 'mimo' && configuration.apiKey.trim().startsWith('tp-')) {
+    return 'tp- 密钥属于 MiMo Token Plan，不能用于本场景，请使用 MiMo 控制台创建的 sk- 按量计费 API Key。';
+  }
+  if (typeof configuration.model !== 'string' || !supportedModels[configuration.provider].includes(configuration.model)) {
+    return 'AI 厂商、模型或 API Key 无效。';
+  }
+  return null;
 };
+
+export const isSupportedAiConfiguration = (value: unknown): value is AiConfiguration =>
+  getAiConfigurationValidationError(value) === null;

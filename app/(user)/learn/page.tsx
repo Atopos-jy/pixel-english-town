@@ -7,10 +7,11 @@ import { ArticleReader } from '@/components/ArticleReader';
 import { ArticleShelf } from '@/components/ArticleShelf';
 import { AiSettingsDrawer, AiSettingsDraft } from '@/components/AiSettingsDrawer';
 import { QuizDrawer } from '@/components/QuizDrawer';
+import { ArticleQuestionFolderDrawer } from '@/components/ArticleQuestionFolderDrawer';
 import { Loading } from '@/components/Loading';
 import { getArticles, markArticleComplete } from '@/services/storageService';
 import { useProgress } from '@/contexts/ProgressContext';
-import { Article } from '@/types';
+import { Article, PublicQuizQuestion } from '@/types';
 
 export default function LearnPage() {
   const { status } = useSession();
@@ -21,8 +22,11 @@ export default function LearnPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
+  const [quizGenerationJob, setQuizGenerationJob] = useState<{ id: string; articleId: string } | null>(null);
   const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
   const [isShelfOpen, setIsShelfOpen] = useState(false);
+  const [isQuestionFolderOpen, setIsQuestionFolderOpen] = useState(false);
+  const [practiceSession, setPracticeSession] = useState<{ questions: PublicQuizQuestion[]; title: string } | null>(null);
   const [aiSettingsDraft, setAiSettingsDraft] = useState<AiSettingsDraft>({
     provider: 'deepseek',
     apiKey: '',
@@ -59,6 +63,39 @@ export default function LearnPage() {
     const timeoutId = window.setTimeout(() => setNotice(null), 4500);
     return () => window.clearTimeout(timeoutId);
   }, [notice]);
+
+  useEffect(() => {
+    if (!quizGenerationJob) return;
+    let stopped = false;
+    let timeoutId: number | undefined;
+
+    const checkJob = async () => {
+      try {
+        const response = await fetch(`/api/quiz/generate/${quizGenerationJob.id}`);
+        const data = await response.json();
+        if (!response.ok || stopped) return;
+        if (data.job.status === 'completed') {
+          setQuizGenerationJob(null);
+          if (!isQuizOpen) setNotice('AI 题目已生成完成，可以开始测验。');
+          return;
+        }
+        if (data.job.status === 'failed') {
+          setQuizGenerationJob(null);
+          setNotice(`AI 出题失败：${data.job.error || '请稍后重试。'}`);
+          return;
+        }
+      } catch {
+        // 网络暂时不可用时保留任务，下一轮继续查询。
+      }
+      if (!stopped) timeoutId = window.setTimeout(checkJob, 2000);
+    };
+
+    void checkJob();
+    return () => {
+      stopped = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [isQuizOpen, quizGenerationJob]);
 
   if (status === 'loading' || loading || progressLoading) return <Loading />;
 
@@ -141,6 +178,7 @@ export default function LearnPage() {
             isCompleted={progress.completedArticleIds.includes(article.id)}
             onComplete={completeArticle}
             onOpenQuiz={openQuiz}
+            onOpenQuestionFolder={() => setIsQuestionFolderOpen(true)}
             onOpenAiSettings={() => setIsAiSettingsOpen(true)}
             onOpenShelf={() => setIsShelfOpen(true)}
           />
@@ -180,7 +218,34 @@ export default function LearnPage() {
       {isQuizOpen && (
         <QuizDrawer
           article={article}
+          activeGenerationJobId={quizGenerationJob?.articleId === article.id ? quizGenerationJob.id : null}
           onRequestClose={requestCloseQuiz}
+          onActivityChange={setIsQuizActive}
+          onGenerationJobChange={(jobId) => setQuizGenerationJob(jobId ? { id: jobId, articleId: article.id } : null)}
+        />
+      )}
+
+      {isQuestionFolderOpen && (
+        <ArticleQuestionFolderDrawer
+          article={article}
+          onClose={() => setIsQuestionFolderOpen(false)}
+          onPractice={(questions, title) => {
+            setIsQuestionFolderOpen(false);
+            setPracticeSession({ questions, title });
+          }}
+        />
+      )}
+
+      {practiceSession && (
+        <QuizDrawer
+          key={practiceSession.questions.map((question) => question.id).join('-')}
+          article={article}
+          initialQuestions={practiceSession.questions}
+          title={practiceSession.title}
+          onRequestClose={() => {
+            setPracticeSession(null);
+            setIsQuizActive(false);
+          }}
           onActivityChange={setIsQuizActive}
         />
       )}
