@@ -35,6 +35,8 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isModelSelectOpen, setIsModelSelectOpen] = useState(false);
+  const hasSavedKeyForSelectedProvider = Boolean(initialSettings.apiKeyLast4) && initialSettings.provider === settings.provider;
+  const savedProviderLabel = initialSettings.provider === 'deepseek' ? 'DeepSeek' : 'MiMo';
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -46,7 +48,7 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
   }, [onClose]);
 
   const setProvider = (provider: AiProvider) => {
-    setSettings({ provider, apiKey: settings.apiKey, model: providerOptions[provider][0].value });
+    setSettings({ provider, apiKey: '', model: providerOptions[provider][0].value });
   };
 
   const saveDraft = async () => {
@@ -87,9 +89,13 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
                   className={`border-2 px-3 py-3 text-sm font-black transition ${settings.provider === provider ? 'border-emerald-800 bg-[#e2f3d0] text-emerald-950 shadow-[2px_2px_0_#166534]' : 'border-slate-700 bg-[#fffdf4] text-slate-600 hover:bg-[#fff4cc]'}`}
                 >
                   {provider === 'deepseek' ? 'DeepSeek' : 'MiMo'}
+                  {initialSettings.apiKeyLast4 && initialSettings.provider === provider && <span className="ml-1.5 text-xs">已保存</span>}
                 </button>
               ))}
             </div>
+            {initialSettings.apiKeyLast4 && initialSettings.provider !== settings.provider && (
+              <p className="mt-2 text-xs leading-5 text-slate-500">当前已保存 {savedProviderLabel} 的配置；保存新的厂商配置会替换它。</p>
+            )}
           </section>
 
           <label className="block">
@@ -100,7 +106,7 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
               autoComplete="off"
               value={settings.apiKey}
               onChange={(event) => setSettings({ ...settings, apiKey: event.target.value })}
-              placeholder={settings.apiKeyLast4 ? `已保存 ····${settings.apiKeyLast4}；输入新 Key 可更新` : (settings.provider === 'deepseek' ? '输入 DeepSeek API Key' : '输入 MiMo API Key')}
+              placeholder={hasSavedKeyForSelectedProvider ? `已保存 ····${initialSettings.apiKeyLast4}；输入新 Key 可更新` : (settings.provider === 'deepseek' ? '输入 DeepSeek API Key' : '输入 MiMo API Key')}
               className="w-full border-2 border-slate-700 bg-[#fffdf4] px-3 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-emerald-700"
             />
           </label>
@@ -123,17 +129,16 @@ export function AiSettingsDrawer({ initialSettings, onClose, onSaveDraft, onRequ
               </select>
               <ChevronDown aria-hidden="true" className={`pointer-events-none absolute right-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700 transition-transform duration-200 ${isModelSelectOpen ? 'rotate-180' : ''}`} />
             </div>
-            <p className="mt-2 text-xs leading-5 text-slate-500">当前可选模型已由服务端校验；新增厂商或模型时只需扩展适配层。</p>
           </label>
 
           <div className="border-l-4 border-amber-500 bg-[#fff4cc] p-3 text-xs leading-5 text-slate-700">
-            保存后，Key 会使用服务器密钥加密后写入数据库；页面和接口响应只会显示末四位。
+            保存后，Key 会受到安全保护；页面和接口响应只会显示末四位。
           </div>
           {saveError && <p className="border-2 border-[#b94d3c] bg-[#ffe1d6] p-3 text-xs text-[#9f3426]">{saveError}</p>}
         </div>
 
         <footer className="grid grid-cols-2 gap-3 border-t-2 border-slate-800 bg-[#fffdf4] p-5">
-          <button type="button" onClick={() => onRequestTest({ ...settings, apiKey: settings.apiKey.trim() })} disabled={!settings.apiKey.trim() && !settings.apiKeyLast4} className="border-2 border-emerald-800 bg-[#e2f3d0] px-3 py-3 text-sm font-black text-emerald-950 transition hover:bg-[#cfeab5] disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={() => onRequestTest({ ...settings, apiKey: settings.apiKey.trim() })} disabled={!settings.apiKey.trim() && !hasSavedKeyForSelectedProvider} className="border-2 border-emerald-800 bg-[#e2f3d0] px-3 py-3 text-sm font-black text-emerald-950 transition hover:bg-[#cfeab5] disabled:cursor-not-allowed disabled:opacity-50">
             测试连接
           </button>
           <button type="button" onClick={saveDraft} disabled={!settings.apiKey.trim() || isSaving} className="flex items-center justify-center gap-1.5 border-2 border-slate-800 bg-amber-300 px-3 py-3 text-sm font-black text-slate-900 shadow-[3px_3px_0_#7c2d12] transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50">
