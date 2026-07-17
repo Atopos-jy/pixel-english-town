@@ -1,0 +1,215 @@
+.admin-pixel {
+  --admin-ink: #172033;
+  --admin-paper: #fffbea;
+  --admin-cream: #fff7d6;
+  --admin-grass: #91c981;
+  --admin-wood: #7c5b35;
+  --admin-line: #c79755;
+  background: #dbe8cf;
+  color: var(--admin-ink);
+}
+
+.admin-pixel aside {
+  border-right: 2px solid var(--admin-ink);
+  background: var(--admin-cream);
+  box-shadow: 4px 0 0 var(--admin-wood);
+}
+
+.admin-pixel aside > div {
+  border-bottom: 2px solid var(--admin-ink);
+  background: #f7e7a8;
+}
+
+.admin-pixel aside h1,
+.admin-pixel main h1,
+.admin-pixel main h2,
+.admin-pixel main h3 {
+  color: var(--admin-ink);
+  font-weight: 900;
+}
+
+.admin-pixel aside nav a,
+.admin-pixel aside nav button {
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  color: #3e4a5d;
+  font-weight: 800;
+}
+
+.admin-pixel aside nav a:hover,
+.admin-pixel aside nav button:hover {
+  border-color: var(--admin-ink);
+  background: #f7e7a8;
+  color: var(--admin-ink);
+}
+
+.admin-pixel main > div > div.bg-white,
+.admin-pixel main form,
+.admin-pixel main .bg-white {
+  border: 2px solid var(--admin-ink);
+  border-radius: 0;
+  background: var(--admin-paper);
+  box-shadow: 4px 4px 0 var(--admin-wood);
+}
+
+.admin-pixel main .rounded-lg,
+.admin-pixel main .rounded-full,
+.admin-pixel main .rounded {
+  border-radius: 0;
+}
+
+.admin-pixel main .shadow,
+.admin-pixel main .shadow-lg,
+.admin-pixel main .shadow-sm,
+.admin-pixel main .hover\\:shadow-lg:hover {
+  box-shadow: 4px 4px 0 var(--admin-wood);
+}
+
+.admin-pixel main .bg-blue-100 {
+  background: #d9eaff;
+}
+.admin-pixel main .bg-green-100 {
+  background: #d9efc5;
+}
+.admin-pixel main .bg-purple-100 {
+  background: #eadcff;
+}
+.admin-pixel main .bg-orange-100 {
+  background: #f7d39f;
+}
+.admin-pixel main .bg-gray-50 {
+  background: #f3edd5;
+}
+.admin-pixel main .bg-gray-100 {
+  background: #e7e4d9;
+}
+
+.admin-pixel main table {
+  border-collapse: collapse;
+}
+
+.admin-pixel main thead {
+  border-bottom: 2px solid var(--admin-ink);
+  background: #f7e7a8;
+}
+
+.admin-pixel main tbody tr {
+  border-bottom: 1px solid #c8b990;
+}
+
+.admin-pixel main tbody tr:hover {
+  background: #fff1bd;
+}
+
+.admin-pixel main input,
+.admin-pixel main select,
+.admin-pixel main textarea {
+  border: 2px solid var(--admin-ink);
+  border-radius: 0;
+  background: #fffdf4;
+  color: var(--admin-ink);
+  box-shadow: none;
+}
+
+.admin-pixel main input:focus,
+.admin-pixel main select:focus,
+.admin-pixel main textarea:focus {
+  border-color: #3b7f57;
+  outline: 2px solid #bce2a5;
+  outline-offset: 1px;
+  --tw-ring-shadow: 0 0 #0000;
+}
+
+.admin-pixel main button:not(.bytemd-toolbar-button) {
+  font-weight: 800;
+}
+
+.admin-pixel main .bg-blue-600,
+.admin-pixel main .bg-green-600,
+.admin-pixel main .bg-purple-600 {
+  border: 2px solid var(--admin-ink);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 var(--admin-wood);
+}
+
+.admin-pixel main .bg-blue-600 {
+  background: #5b9bd5;
+}
+.admin-pixel main .bg-green-600 {
+  background: #78bd78;
+}
+.admin-pixel main .bg-purple-600 {
+  background: #ae8bd8;
+}
+
+.admin-pixel main .hover\\:bg-blue-700:hover {
+  background: #477ead;
+}
+.admin-pixel main .hover\\:bg-green-700:hover {
+  background: #5e9b62;
+}
+.admin-pixel main .hover\\:bg-purple-700:hover {
+  background: #8964b6;
+}
+
+.admin-pixel main .text-gray-800,
+.admin-pixel main .text-gray-900 {
+  color: var(--admin-ink);
+}
+.admin-pixel main .text-gray-500,
+.admin-pixel main .text-gray-600,
+.admin-pixel main .text-gray-700 {
+  color: #685741;
+}
+
+.admin-pixel .badge-manager input:not([type='checkbox']) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-pixel .badge-manager table th,
+.admin-pixel .badge-manager table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-pixel .badge-manager tbody input:focus {
+  background: #fff4cc;
+  outline: 2px solid #3b7f57;
+  outline-offset: 2px;
+}
+
+.admin-pixel .badge-manager tbody select,
+.admin-pixel .badge-manager tbody input[type='number'] {
+  border: 1px solid #c8b990;
+  background: #fffdf4;
+  padding: 0.35rem 0.5rem;
+}
+
+@media (max-width: 767px) {
+  .admin-pixel aside {
+    position: static;
+    height: auto;
+    width: 100%;
+    box-shadow: 0 4px 0 var(--admin-wood);
+  }
+
+  .admin-pixel aside nav {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 0;
+  }
+
+  .admin-pixel aside nav a,
+  .admin-pixel aside nav button {
+    flex: 1 1 50%;
+    padding: 0.75rem 1rem;
+  }
+
+  .admin-pixel main {
+    margin-left: 0;
+    padding: 1.25rem;
+  }
+}

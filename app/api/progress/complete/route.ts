@@ -2,8 +2,8 @@ import { Prisma, PlazaActivityType } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 
-import { BADGES } from '@/constants';
 import { authOptions } from '@/lib/auth';
+import { DEFAULT_BADGES, isBadgeEarned, parseBadgeDefinitions } from '@/lib/badges';
 import { getShanghaiDate, invalidatePlazaLeaderboards } from '@/lib/plaza-leaderboards';
 import { prisma } from '@/lib/prisma';
 import { publishPlazaEvent } from '@/lib/redis';
@@ -72,6 +72,8 @@ export async function POST(request: Request) {
   const learningDate = getShanghaiDate();
 
   try {
+    const badgeConfig = await prisma.badgeConfig.findUnique({ where: { id: 'default' } });
+    const badges = parseBadgeDefinitions(badgeConfig?.badges) || DEFAULT_BADGES;
     const result = await prisma.$transaction(async (tx) => {
       const [progress, article] = await Promise.all([
         tx.userProgress.findUnique({ where: { userId: session.user.id } }),
@@ -119,7 +121,9 @@ export async function POST(request: Request) {
         activityLog,
         badges: earnedBadgeIds,
       };
-      const newBadges = BADGES.filter((badge) => !earnedBadgeIds.includes(badge.id) && badge.condition(currentStats));
+      const newBadges = badges.filter(
+        (badge) => badge.enabled && !earnedBadgeIds.includes(badge.id) && isBadgeEarned(badge, currentStats),
+      );
       const nextBadgeIds = [...earnedBadgeIds, ...newBadges.map((badge) => badge.id)];
 
       const articleActivity = await tx.plazaActivity.create({

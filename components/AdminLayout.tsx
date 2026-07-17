@@ -4,8 +4,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { LayoutDashboard, FileText, Users, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Award, LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import '@/app/admin/admin.css';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -48,7 +49,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="admin-pixel min-h-screen bg-gray-100">
       {/* 侧边栏 */}
       <aside className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
         <div className="p-6">
@@ -79,6 +80,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           >
             <Users className="w-5 h-5 mr-3" />
             用户管理
+          </Link>
+
+          <Link
+            href="/admin/badges"
+            className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+          >
+            <Award className="w-5 h-5 mr-3" />
+            徽章管理
           </Link>
 
           <button
