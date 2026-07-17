@@ -153,26 +153,36 @@ export function ArticleQuestionFolderDrawer({ article, onClose, onPractice }: { 
             ))}
           </div>
 
-          <div className="mb-5 border-2 border-slate-300 bg-[#fffdf4] p-3">
-            <p className="mb-2 text-xs font-black text-slate-700">按题型筛选</p>
-            <div className="flex flex-wrap gap-2">
-              {(['all', 'multiple_choice', 'true_false', 'fill_blank'] as TypeFilter[]).map((item) => (
-                <button key={item} type="button" onClick={() => setType(item)} className={`border px-2 py-1 text-xs font-semibold transition ${type === item ? 'border-amber-700 bg-amber-300 text-amber-950' : 'border-slate-400 bg-[#fff9e8] text-slate-700 hover:bg-[#fff4cc]'}`}>
-                  {item === 'all' ? '全部题型' : typeLabels[item]}
-                </button>
-              ))}
+          <div className="mb-5 flex flex-wrap gap-4">
+            <div>
+              <p className="mb-2 text-xs font-black text-slate-700">按题型筛选</p>
+              <select
+                aria-label="按题型筛选"
+                value={type}
+                onChange={(event) => setType(event.target.value as TypeFilter)}
+                className="min-w-32 border-2 border-amber-700 bg-amber-300 px-2 py-1 text-xs font-black text-amber-950 outline-none transition focus:border-amber-950"
+              >
+                <option value="all">全部题型</option>
+                <option value="multiple_choice">{typeLabels.multiple_choice}</option>
+                <option value="true_false">{typeLabels.true_false}</option>
+                <option value="fill_blank">{typeLabels.fill_blank}</option>
+              </select>
             </div>
             {category === 'wrong' && (
-              <>
-                <p className="mb-2 mt-3 text-xs font-black text-slate-700">按答错次数筛选</p>
-                <div className="flex flex-wrap gap-2">
-                  {(['all', '1', '2', '3'] as WrongCountFilter[]).map((item) => (
-                    <button key={item} type="button" onClick={() => setWrongCount(item)} className={`border px-2 py-1 text-xs font-semibold transition ${wrongCount === item ? 'border-[#b94d3c] bg-[#ffe1d6] text-[#8b2c21]' : 'border-slate-400 bg-[#fff9e8] text-slate-700 hover:bg-[#fff4cc]'}`}>
-                      {item === 'all' ? '全部次数' : item === '3' ? '三次及以上' : `${item} 次`}
-                    </button>
-                  ))}
-                </div>
-              </>
+              <div>
+                <p className="mb-2 text-xs font-black text-slate-700">按答错次数筛选</p>
+                <select
+                  aria-label="按答错次数筛选"
+                  value={wrongCount}
+                  onChange={(event) => setWrongCount(event.target.value as WrongCountFilter)}
+                  className="min-w-32 border-2 border-[#b94d3c] bg-[#ffe1d6] px-2 py-1 text-xs font-black text-[#8b2c21] outline-none transition focus:border-[#8b2c21]"
+                >
+                  <option value="all">全部次数</option>
+                  <option value="1">1 次</option>
+                  <option value="2">2 次</option>
+                  <option value="3">三次及以上</option>
+                </select>
+              </div>
             )}
           </div>
 
