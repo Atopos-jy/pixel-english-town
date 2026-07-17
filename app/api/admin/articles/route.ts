@@ -54,7 +54,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { 
-      id,
       date,
       titleEn, 
       titleZh, 
@@ -109,20 +108,26 @@ export async function POST(request: Request) {
       }
     }
 
-    // 创建文章
-    const article = await prisma.article.create({
-      data: {
-        id: id || undefined, // 如果提供了id则使用，否则让Prisma生成
-        date: date || new Date().toISOString().split('T')[0], // 如果没有提供date，使用当前日期
-        titleEn,
-        titleZh,
-        summaryEn,
-        summaryZh,
-        content,
-        difficulty,
-        durationSeconds,
-        audioUrl: audioUrl || null
-      }
+    const articleData = {
+      date: date || new Date().toISOString().split('T')[0],
+      titleEn,
+      titleZh,
+      summaryEn,
+      summaryZh,
+      content,
+      difficulty,
+      durationSeconds,
+      audioUrl: audioUrl || null,
+    };
+
+    const article = await prisma.$transaction(async (transaction) => {
+      const sequence = await transaction.articleIdSequence.update({
+        where: { name: 'article' },
+        data: { currentValue: { increment: 1 } },
+      });
+      const generatedId = `art-${String(sequence.currentValue).padStart(3, '0')}`;
+
+      return transaction.article.create({ data: { id: generatedId, ...articleData } });
     });
 
     return NextResponse.json(article, { status: 201 });

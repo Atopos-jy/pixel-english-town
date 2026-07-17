@@ -41,17 +41,14 @@ export async function POST(req: NextRequest) {
     if (!whisperRes.ok) {
       const err = await whisperRes.json().catch(() => ({}));
       console.error('Whisper 转录失败:', err);
-      return NextResponse.json(
-        { error: `转录失败: ${err?.error?.message || '未知错误'}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: `转录失败: ${err?.error?.message || '未知错误'}` }, { status: 500 });
     }
 
     // response_format=text 时直接返回纯文本字符串
     const transcript = await whisperRes.text();
     return NextResponse.json({ transcript: transcript.trim() });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('speaking-eval 出错:', error);
-    return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : '服务器错误' }, { status: 500 });
   }
 }

@@ -6,8 +6,6 @@ import { Difficulty } from '@/types';
 import { Editor } from '@bytemd/react';
 import gfm from '@bytemd/plugin-gfm';
 import OssUploader from './OssUploader';
-import 'bytemd/dist/index.css';
-import '../app/bytemd-custom.css';
 
 interface ContentBlock {
   en: string;

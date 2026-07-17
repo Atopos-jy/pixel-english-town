@@ -1,47 +1,40 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { dbRequestLimiter } from './request-limiter';
 
+const RETRYABLE_CODES = new Set(['P2024', 'P1001', 'P1017']);
+
+function isRetryableError(error: unknown): error is Prisma.PrismaClientKnownRequestError {
+  return error instanceof Prisma.PrismaClientKnownRequestError && RETRYABLE_CODES.has(error.code);
+}
+
 /**
  * 带重试机制和限流的数据库操作包装器
- * @param operation 数据库操作函数
- * @param maxRetries 最大重试次数
- * @param retryDelay 重试延迟（毫秒）
  */
-export async function withRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3,
-  retryDelay: number = 500
-): Promise<T> {
-  // 使用限流器控制并发
+export async function withRetry<T>(operation: () => Promise<T>, maxRetries = 3, retryDelay = 500): Promise<T> {
   return dbRequestLimiter.execute(async () => {
-  let lastError: any;
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error: any) {
-      lastError = error;
-      
-      // 只对连接相关错误进行重试
-      const isConnectionError = 
-        error.code === 'P2024' || // 连接池超时
-        error.code === 'P1001' || // 无法连接到数据库
-        error.code === 'P1017';   // 服务器关闭连接
-      
-      if (!isConnectionError || attempt === maxRetries) {
-        throw error;
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: unknown) {
+        lastError = error;
+
+        if (!isRetryableError(error) || attempt === maxRetries) {
+          throw error;
+        }
+
+        const currentDelay = retryDelay * 2 ** attempt;
+        console.warn(
+          `数据库操作失败 (${attempt + 1}/${maxRetries + 1}), ` + `错误: ${error.code}, ${currentDelay}ms 后重试...`,
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, currentDelay));
       }
-      
-      // 使用指数退避策略：每次重试延迟翻倍
-      const currentDelay = retryDelay * Math.pow(2, attempt);
-      console.warn(`数据库操作失败 (尝试 ${attempt + 1}/${maxRetries + 1}), 错误: ${error.code}, ${currentDelay}ms 后重试...`);
-      
-      // 等待后重试（不需要手动重连，Prisma会自动处理）
-      await new Promise(resolve => setTimeout(resolve, currentDelay));
     }
-  }
-  
-  throw lastError;
+
+    throw lastError;
   });
 }
 
@@ -52,7 +45,7 @@ export async function checkDatabaseHealth(): Promise<boolean> {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('数据库健康检查失败:', error);
     return false;
   }

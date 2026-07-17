@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getPublicAiSettings, saveAiConfiguration } from '@/lib/ai/settings';
-import { isSupportedAiConfiguration } from '@/lib/ai/quiz-provider';
+import { getAiConfigurationValidationError } from '@/lib/ai/quiz-provider';
 
 const getUserId = (session: { user?: unknown } | null) => (session?.user as { id?: string } | undefined)?.id;
 
@@ -20,8 +20,9 @@ export async function PUT(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: '请先登录。' }, { status: 401 });
 
   const body = await req.json().catch(() => null);
-  if (!body || !isSupportedAiConfiguration(body.configuration)) {
-    return NextResponse.json({ error: 'AI 厂商、模型或 API Key 无效。' }, { status: 400 });
+  const configurationError = getAiConfigurationValidationError(body?.configuration);
+  if (configurationError) {
+    return NextResponse.json({ error: configurationError }, { status: 400 });
   }
 
   try {

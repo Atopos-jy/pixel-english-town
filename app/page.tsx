@@ -50,13 +50,6 @@ export default function HomePage() {
   const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
 
-  // 一旦认证成功，自动跳转到小镇（登录/注册/已有 session 三种情况统一处理）
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.push('/town');
-    }
-  }, [status, router]);
-
   if (status === 'loading') return <Loading />;
 
   const isReturningUser = status === 'authenticated';
@@ -65,21 +58,20 @@ export default function HomePage() {
     : 'PIXEL ENGLISH TOWN在小镇里，开始今天的英语冒险阅读、练习、收集徽章。学习广场已经亮起灯火，等你加入。';
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f6dfaa] text-white">
+    <main className="home-page relative min-h-[100dvh] overflow-hidden bg-[#f6dfaa] text-white">
       <div
         aria-hidden="true"
-        className={`absolute inset-x-0 top-0 bg-[url('/images/home/come-background-v1.png')] bg-cover bg-center transition-all duration-700 ease-out ${
+        className={`home-page__background absolute inset-x-0 top-0 bg-[url('/images/home/come-background.png')] transition-all duration-700 ease-out ${
           showAuth ? 'h-[28vh] bg-[position:center_62%]' : 'h-full'
         }`}
       />
 
       <section
-        className={showAuth ? 'relative z-10 flex min-h-screen flex-col pt-[28vh]' : 'absolute right-[5%] z-10'}
-        style={showAuth ? undefined : { bottom: 'calc(12% + 6rem - 80px)', left: 'calc(5% + 50px)' }}
+        className={showAuth ? 'relative z-10 flex min-h-[100dvh] flex-col pt-[28vh]' : 'home-page__copy absolute z-10'}
       >
         {!showAuth ? (
-          <div className="max-w-3xl animate-fade-in-up">
-            <p className="relative h-[72px] max-w-2xl overflow-hidden text-sm font-bold leading-6 text-[#55320f] sm:h-[84px] sm:text-base sm:leading-7">
+          <div className="home-page__copy-inner animate-fade-in-up">
+            <p className="relative h-[72px] overflow-hidden text-sm font-bold leading-6 text-[#55320f] sm:h-[84px] sm:text-base sm:leading-7">
               <span className="absolute bottom-0 left-0 block w-full">
                 <TypewriterText text={introText} />
               </span>
@@ -99,14 +91,17 @@ export default function HomePage() {
           </div>
         )}
       </section>
-      {!showAuth && <button
-        onClick={() => isReturningUser ? router.push('/town') : setShowAuth(true)}
-        className="absolute left-1/2 z-20 w-[30%] min-w-[240px] max-w-[505px] -translate-x-1/2 transition duration-150 hover:-translate-y-1 hover:drop-shadow-[0_0_18px_rgba(255,224,111,.95)] focus:outline-none focus:ring-4 focus:ring-amber-200"
-        style={{ bottom: 'calc(12% - 40px)' }}
-        aria-label="点击进入小镇"
-      >
-        <img src="/images/home/enter-town-button-v2.png" alt="点击进入小镇" className="h-auto w-full" />
-      </button>}
+      {!showAuth && (
+        <button
+          onClick={() => (isReturningUser ? router.push('/town') : setShowAuth(true))}
+          className="home-page__enter-button absolute left-1/2 z-20 -translate-x-1/2 transition duration-150 hover:-translate-y-1 hover:drop-shadow-[0_0_18px_rgba(255,224,111,.95)] focus:outline-none focus:ring-4 focus:ring-amber-200"
+          aria-label="点击进入小镇"
+        >
+          {/* 像素按钮使用原始 PNG 尺寸与硬边渲染，不交给图片优化器重采样。 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/home/enter-town-button.png" alt="点击进入小镇" className="h-auto w-full" />
+        </button>
+      )}
     </main>
   );
 }
