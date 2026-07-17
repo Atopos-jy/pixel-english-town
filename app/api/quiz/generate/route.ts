@@ -5,6 +5,7 @@ import { Difficulty } from '@/types';
 import { getQuizProvider } from '@/lib/ai/quiz-provider';
 import { takeAiRequestSlot } from '@/lib/ai/rate-limit';
 import { getStoredAiConfiguration } from '@/lib/ai/settings';
+import { prisma } from '@/lib/prisma';
 
 const MAX_ARTICLE_CHARACTERS = 40_000;
 
@@ -21,13 +22,23 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  if (!body || typeof body.articleText !== 'string' || !body.articleText.trim()) {
+  if (!body || typeof body.articleId !== 'string' || !body.articleId) {
     return NextResponse.json({ error: '缺少文章内容。' }, { status: 400 });
   }
-  if (body.articleText.length > MAX_ARTICLE_CHARACTERS) {
+
+  const article = await prisma.article.findUnique({ where: { id: body.articleId }, select: { id: true, content: true, difficulty: true } });
+  if (!article) return NextResponse.json({ error: '文章不存在。' }, { status: 404 });
+
+  const articleText = Array.isArray(article.content)
+    ? article.content.map((block) => (
+      block && typeof block === 'object' && 'en' in block && typeof block.en === 'string' ? block.en : ''
+    )).filter(Boolean).join('\n\n')
+    : '';
+  if (!articleText) return NextResponse.json({ error: '文章内容无效。' }, { status: 400 });
+  if (articleText.length > MAX_ARTICLE_CHARACTERS) {
     return NextResponse.json({ error: '文章内容过长，暂时无法出题。' }, { status: 400 });
   }
-  if (!Object.values(Difficulty).includes(body.difficulty)) {
+  if (!Object.values(Difficulty).includes(article.difficulty as Difficulty)) {
     return NextResponse.json({ error: '文章难度无效。' }, { status: 400 });
   }
 
@@ -45,10 +56,32 @@ export async function POST(req: NextRequest) {
 
   try {
     const questions = await getQuizProvider(configuration.provider).generateQuiz(configuration, {
-      articleText: body.articleText,
-      difficulty: body.difficulty,
+      articleText,
+      difficulty: article.difficulty as Difficulty,
     });
-    return NextResponse.json({ questions });
+    const storedQuestions = await prisma.$transaction(
+      questions.map((question) => prisma.articleQuestion.create({
+        data: {
+          articleId: article.id,
+          createdByUserId: userId,
+          type: question.type,
+          stem: question.question,
+          options: question.options,
+          correctAnswer: question.answer,
+          explanation: question.explanation,
+          knowledgePoints: question.knowledgePoints,
+        },
+      })),
+    );
+
+    return NextResponse.json({
+      questions: storedQuestions.map((question) => ({
+        id: question.id,
+        type: question.type,
+        question: question.stem,
+        options: question.options,
+      })),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'AI 服务暂时不可用。';
     console.error('Quiz generation failed', { provider: configuration.provider, model: configuration.model, message });

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { BookOpenCheck, X } from 'lucide-react';
-import { Article, Difficulty } from '@/types';
+import { Article } from '@/types';
 import { ArticleQuiz } from './ArticleQuiz';
 
 interface QuizDrawerProps {
@@ -61,9 +61,8 @@ export function QuizDrawer({ article, onRequestClose, onActivityChange }: QuizDr
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           <ArticleQuiz
+            articleId={article.id}
             key={article.id}
-            articleText={article.content.map((block) => block.en).join('\n\n')}
-            difficulty={article.difficulty as Difficulty}
             onClose={onRequestClose}
             onActivityChange={onActivityChange}
           />

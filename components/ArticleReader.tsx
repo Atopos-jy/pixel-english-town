@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Article, Difficulty, WordTimestamp } from '../types';
 import { AudioPlayer } from './AudioPlayer';
 import { DIFFICULTY_LABELS } from '../constants';
-import { CheckCircle2, Calendar, Trophy, Mic, Square, BookOpen, BookOpenCheck, Settings } from 'lucide-react';
+import { Bookmark, CheckCircle2, Calendar, Trophy, Mic, Square, BookOpen, BookOpenCheck, Settings } from 'lucide-react';
 import { Viewer } from '@bytemd/react';
 import gfm from '@bytemd/plugin-gfm';
 import 'bytemd/dist/index.css';
@@ -14,13 +14,14 @@ interface ArticleReaderProps {
   isCompleted: boolean;
   onComplete: () => void;
   onOpenQuiz?: () => void;
+  onOpenQuestionFolder?: () => void;
   onOpenAiSettings?: () => void;
   onOpenShelf?: () => void;
 }
 
 type ViewMode = 'en' | 'zh' | 'bilingual';
 
-export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isCompleted, onComplete, onOpenQuiz = () => {}, onOpenAiSettings = () => {}, onOpenShelf = () => {} }) => {
+export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isCompleted, onComplete, onOpenQuiz = () => {}, onOpenQuestionFolder = () => {}, onOpenAiSettings = () => {}, onOpenShelf = () => {} }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('en');
   const [currentAudioTime, setCurrentAudioTime] = useState(0);
@@ -438,6 +439,13 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({ article, isComplet
             className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#fff9e8] px-3 py-2 text-xs font-black text-slate-700 transition hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900"
           >
             <Settings size={15} />AI 设置
+          </button>
+          <button
+            type="button"
+            onClick={onOpenQuestionFolder}
+            className="inline-flex items-center gap-1.5 border-2 border-slate-700 bg-[#fff9e8] px-3 py-2 text-xs font-black text-slate-700 transition hover:border-emerald-700 hover:bg-[#e2f3d0] hover:text-emerald-900"
+          >
+            <Bookmark size={15} />收藏夹
           </button>
           <button
             type="button"

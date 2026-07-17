@@ -1,27 +1,29 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { QuizQuestion, QuizResult, Difficulty } from '../types';
-import { CheckCircle2, XCircle, RotateCcw, Trophy, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { PublicQuizQuestion, QuizResult } from '../types';
+import { Bookmark, CheckCircle2, XCircle, RotateCcw, Trophy, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface ArticleQuizProps {
-  articleText: string;
-  difficulty: Difficulty;
+  articleId: string;
   onClose: () => void;
   onActivityChange?: (isActive: boolean) => void;
 }
 
 type QuizPhase = 'idle' | 'loading' | 'answering' | 'finished';
 
-export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficulty, onClose, onActivityChange }) => {
+export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleId, onClose, onActivityChange }) => {
   const [phase, setPhase] = useState<QuizPhase>('idle');
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [questions, setQuestions] = useState<PublicQuizQuestion[]>([]);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [fillInput, setFillInput] = useState('');
   const [showExplanation, setShowExplanation] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+  const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
+  const [bookmarkingQuestionId, setBookmarkingQuestionId] = useState<string | null>(null);
 
   useEffect(() => {
     onActivityChange?.(phase === 'loading' || phase === 'answering');
@@ -40,12 +42,14 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
     setUserAnswer('');
     setFillInput('');
     setShowExplanation(false);
+    setIsSubmittingAnswer(false);
+    setBookmarkedQuestionIds(new Set());
 
     try {
       const res = await fetch('/api/quiz/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ articleText, difficulty }),
+        body: JSON.stringify({ articleId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '生成失败');
@@ -57,34 +61,46 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
     }
   };
 
-  const submitAnswer = (answer: string) => {
-    if (isAnswered) return;
-    const q = currentQuestion;
-    let correct = false;
+  const submitAnswer = async (answer: string) => {
+    if (isAnswered || isSubmittingAnswer) return;
+    setIsSubmittingAnswer(true);
+    setError(null);
 
-    if (q.type === 'multiple_choice') {
-      correct = answer.toUpperCase() === q.answer.toUpperCase();
-    } else if (q.type === 'true_false') {
-      correct = answer.toLowerCase() === q.answer.toLowerCase();
-    } else if (q.type === 'fill_blank') {
-      // 忽略大小写和首尾标点
-      const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-      correct = normalize(answer) === normalize(q.answer);
+    try {
+      const response = await fetch(`/api/questions/${currentQuestion.id}/attempt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answer }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '提交答案失败。');
+
+      setUserAnswer(answer);
+      setShowExplanation(true);
+      setResults(prev => [...prev, {
+        questionIndex: currentIdx,
+        userAnswer: answer,
+        correct: data.correct,
+        correctAnswer: data.correctAnswer,
+        explanation: data.explanation,
+      }]);
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : '提交答案失败。');
+    } finally {
+      setIsSubmittingAnswer(false);
     }
-
-    setUserAnswer(answer);
-    setShowExplanation(true);
-    setResults(prev => [...prev, { questionIndex: currentIdx, userAnswer: answer, correct }]);
   };
 
   const goNext = () => {
     if (isLast) {
       setPhase('finished');
     } else {
-      setCurrentIdx(i => i + 1);
-      setUserAnswer('');
-      setFillInput('');
-      setShowExplanation(false);
+      const nextIdx = currentIdx + 1;
+      const nextResult = results[nextIdx];
+      setCurrentIdx(nextIdx);
+      setUserAnswer(nextResult?.userAnswer || '');
+      setFillInput(nextResult?.userAnswer || '');
+      setShowExplanation(Boolean(nextResult));
     }
   };
 
@@ -97,6 +113,34 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
     setUserAnswer(previousResult?.userAnswer || '');
     setFillInput(previousResult?.userAnswer || '');
     setShowExplanation(Boolean(previousResult));
+  };
+
+  const toggleBookmark = async () => {
+    const questionId = currentQuestion.id;
+    if (bookmarkingQuestionId) return;
+
+    const isBookmarked = bookmarkedQuestionIds.has(questionId);
+    setBookmarkingQuestionId(questionId);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/questions/${questionId}/bookmark`, {
+        method: isBookmarked ? 'DELETE' : 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '更新收藏失败。');
+
+      setBookmarkedQuestionIds((previous) => {
+        const next = new Set(previous);
+        if (data.isBookmarked) next.add(questionId);
+        else next.delete(questionId);
+        return next;
+      });
+    } catch (bookmarkError) {
+      setError(bookmarkError instanceof Error ? bookmarkError.message : '更新收藏失败。');
+    } finally {
+      setBookmarkingQuestionId(null);
+    }
   };
 
   const scoreCount = results.filter(r => r.correct).length;
@@ -169,8 +213,8 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
                     {!r?.correct && (
                       <p className="text-red-500 mt-1">你的答案：{r?.userAnswer || '（未作答）'}</p>
                     )}
-                    <p className="text-slate-600 mt-1">正确答案：<span className="font-semibold">{q.answer}</span></p>
-                    <p className="text-slate-500 mt-1 italic">{q.explanation}</p>
+                    <p className="text-slate-600 mt-1">正确答案：<span className="font-semibold">{r?.correctAnswer}</span></p>
+                    <p className="text-slate-500 mt-1 italic">{r?.explanation}</p>
                   </div>
                 </div>
               </div>
@@ -211,6 +255,12 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
         />
       </div>
 
+      {error && (
+        <div className="border-2 border-[#b94d3c] bg-[#ffe1d6] px-4 py-3 text-sm text-[#9f3426]">
+          {error}
+        </div>
+      )}
+
       {/* 题目 */}
       <div className="border-2 border-slate-800 bg-[#fffdf4] p-5">
         <div className="flex items-center gap-2 mb-3">
@@ -218,6 +268,20 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
             {currentQuestion.type === 'multiple_choice' ? '单选题' :
              currentQuestion.type === 'true_false' ? '判断题' : '填空题'}
           </span>
+          <button
+            type="button"
+            onClick={toggleBookmark}
+            disabled={bookmarkingQuestionId === currentQuestion.id}
+            aria-label={bookmarkedQuestionIds.has(currentQuestion.id) ? '取消收藏本题' : '收藏本题'}
+            className={`ml-auto flex items-center gap-1 border px-2 py-0.5 text-xs font-semibold transition disabled:cursor-wait disabled:opacity-60 ${
+              bookmarkedQuestionIds.has(currentQuestion.id)
+                ? 'border-amber-700 bg-amber-300 text-amber-950'
+                : 'border-slate-500 bg-[#fffdf4] text-slate-700 hover:bg-[#fff4cc]'
+            }`}
+          >
+            <Bookmark className="h-3.5 w-3.5" fill={bookmarkedQuestionIds.has(currentQuestion.id) ? 'currentColor' : 'none'} />
+            {bookmarkedQuestionIds.has(currentQuestion.id) ? '已收藏' : '收藏题目'}
+          </button>
         </div>
         <p className="text-slate-800 font-medium leading-relaxed">{currentQuestion.question}</p>
       </div>
@@ -228,7 +292,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
           {currentQuestion.options?.map((opt) => {
             const letter = opt.charAt(0); // "A" / "B" / "C" / "D"
             const isSelected = userAnswer === letter;
-            const isCorrect = currentQuestion.answer.toUpperCase() === letter;
+            const isCorrect = results[currentIdx]?.correctAnswer?.toUpperCase() === letter;
             let cls = 'border-2 px-4 py-3 text-sm text-left cursor-pointer transition-all font-medium ';
             if (!isAnswered) {
               cls += 'border-slate-500 bg-[#fff9e8] hover:border-amber-600 hover:bg-[#fff4cc] text-slate-700';
@@ -240,7 +304,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
               cls += 'bg-white border-slate-200 text-slate-400';
             }
             return (
-              <button key={letter} className={cls} onClick={() => submitAnswer(letter)} disabled={isAnswered}>
+              <button key={letter} className={cls} onClick={() => submitAnswer(letter)} disabled={isAnswered || isSubmittingAnswer}>
                 <span className="font-bold mr-2">{letter}.</span>
                 {opt.slice(3)} {/* 去掉 "A. " 前缀显示内容 */}
                 {isAnswered && isCorrect && <CheckCircle2 className="inline w-4 h-4 ml-1 text-green-500" />}
@@ -256,7 +320,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
           {['true', 'false'].map((val) => {
             const label = val === 'true' ? '✅ 正确' : '❌ 错误';
             const isSelected = userAnswer === val;
-            const isCorrect = currentQuestion.answer.toLowerCase() === val;
+            const isCorrect = results[currentIdx]?.correctAnswer?.toLowerCase() === val;
             let cls = 'flex-1 border-2 py-3 text-sm font-medium cursor-pointer transition-all ';
             if (!isAnswered) {
               cls += 'border-slate-500 bg-[#fff9e8] hover:border-amber-600 hover:bg-[#fff4cc] text-slate-700';
@@ -268,7 +332,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
               cls += 'bg-white border-slate-200 text-slate-400';
             }
             return (
-              <button key={val} className={cls} onClick={() => submitAnswer(val)} disabled={isAnswered}>
+              <button key={val} className={cls} onClick={() => submitAnswer(val)} disabled={isAnswered || isSubmittingAnswer}>
                 {label}
               </button>
             );
@@ -283,14 +347,14 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
             value={fillInput}
             onChange={(e) => setFillInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && fillInput.trim()) submitAnswer(fillInput.trim()); }}
-            disabled={isAnswered}
+            disabled={isAnswered || isSubmittingAnswer}
             placeholder="输入你的答案…"
             className="flex-1 border-2 border-slate-700 bg-[#fffdf4] px-4 py-3 text-sm focus:border-emerald-700 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500"
           />
           {!isAnswered && (
             <button
               onClick={() => { if (fillInput.trim()) submitAnswer(fillInput.trim()); }}
-              disabled={!fillInput.trim()}
+              disabled={!fillInput.trim() || isSubmittingAnswer}
               className="border-2 border-slate-800 bg-amber-300 px-4 py-3 text-sm font-medium text-slate-900 shadow-[2px_2px_0_#7c2d12] transition-all hover:bg-amber-400 disabled:opacity-40"
             >
               提交
@@ -305,10 +369,10 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
           <div className="flex items-center gap-1.5 font-semibold mb-1">
             {results[currentIdx]?.correct
               ? <><CheckCircle2 className="w-4 h-4 text-green-500" /><span className="text-green-700">回答正确！</span></>
-              : <><XCircle className="w-4 h-4 text-amber-500" /><span className="text-amber-700">回答有误，正确答案：{currentQuestion.answer}</span></>
+              : <><XCircle className="w-4 h-4 text-amber-500" /><span className="text-amber-700">回答有误，正确答案：{results[currentIdx]?.correctAnswer}</span></>
             }
           </div>
-          <p className="text-slate-600 leading-relaxed">{currentQuestion.explanation}</p>
+          <p className="text-slate-600 leading-relaxed">{results[currentIdx]?.explanation}</p>
         </div>
       )}
 

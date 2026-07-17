@@ -86,10 +86,26 @@ export interface QuizQuestion {
   options?: string[];   // 仅 multiple_choice 有
   answer: string;       // multiple_choice: "A"/"B"/"C"/"D"；true_false: "true"/"false"；fill_blank: 答案词
   explanation: string;
+  knowledgePoints: string[];
+}
+
+export interface PublicQuizQuestion {
+  id: string;
+  type: QuizQuestionType;
+  question: string;
+  options?: string[];
+}
+
+export interface QuizAnswerFeedback {
+  correct: boolean;
+  correctAnswer: string;
+  explanation: string;
 }
 
 export interface QuizResult {
   questionIndex: number;
   userAnswer: string;
   correct: boolean;
+  correctAnswer?: string;
+  explanation?: string;
 }

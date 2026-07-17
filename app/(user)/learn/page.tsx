@@ -7,6 +7,7 @@ import { ArticleReader } from '@/components/ArticleReader';
 import { ArticleShelf } from '@/components/ArticleShelf';
 import { AiSettingsDrawer, AiSettingsDraft } from '@/components/AiSettingsDrawer';
 import { QuizDrawer } from '@/components/QuizDrawer';
+import { ArticleQuestionFolderDrawer } from '@/components/ArticleQuestionFolderDrawer';
 import { Loading } from '@/components/Loading';
 import { getArticles, markArticleComplete } from '@/services/storageService';
 import { useProgress } from '@/contexts/ProgressContext';
@@ -23,6 +24,7 @@ export default function LearnPage() {
   const [isQuizActive, setIsQuizActive] = useState(false);
   const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
   const [isShelfOpen, setIsShelfOpen] = useState(false);
+  const [isQuestionFolderOpen, setIsQuestionFolderOpen] = useState(false);
   const [aiSettingsDraft, setAiSettingsDraft] = useState<AiSettingsDraft>({
     provider: 'deepseek',
     apiKey: '',
@@ -141,6 +143,7 @@ export default function LearnPage() {
             isCompleted={progress.completedArticleIds.includes(article.id)}
             onComplete={completeArticle}
             onOpenQuiz={openQuiz}
+            onOpenQuestionFolder={() => setIsQuestionFolderOpen(true)}
             onOpenAiSettings={() => setIsAiSettingsOpen(true)}
             onOpenShelf={() => setIsShelfOpen(true)}
           />
@@ -183,6 +186,10 @@ export default function LearnPage() {
           onRequestClose={requestCloseQuiz}
           onActivityChange={setIsQuizActive}
         />
+      )}
+
+      {isQuestionFolderOpen && (
+        <ArticleQuestionFolderDrawer article={article} onClose={() => setIsQuestionFolderOpen(false)} />
       )}
 
       {isAiSettingsOpen && (
