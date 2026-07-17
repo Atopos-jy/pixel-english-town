@@ -21,6 +21,8 @@ model User {
   // 关联用户进度（一对一关系）
   progress  UserProgress?
   aiSetting UserAiSetting?
+  articleQuestions ArticleQuestion[]
+  questionStates   UserQuestionState[]
   
   @@map("users")
 }
@@ -92,6 +94,50 @@ model Article {
   wordTimestamps  Json?    // 逐词时间戳 [{word, start, end}]，由 Whisper API 生成
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  questions       ArticleQuestion[]
   
   @@map("articles")
+}
+
+model ArticleQuestion {
+  id              String   @id @default(cuid())
+  articleId       String
+  createdByUserId String
+  type            String
+  stem            String   @db.Text
+  options         Json?
+  correctAnswer   String   @db.Text
+  explanation     String   @db.Text
+  knowledgePoints Json     @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  article         Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdByUser   User     @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  userStates      UserQuestionState[]
+
+  @@index([articleId, createdByUserId])
+  @@map("article_questions")
+}
+
+model UserQuestionState {
+  id             String          @id @default(cuid())
+  userId         String
+  questionId     String
+  isBookmarked   Boolean         @default(false)
+  attemptCount   Int             @default(0)
+  correctCount   Int             @default(0)
+  wrongCount     Int             @default(0)
+  lastAnswer     String?         @db.Text
+  lastAnsweredAt DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question       ArticleQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, isBookmarked])
+  @@index([userId, wrongCount])
+  @@map("user_question_states")
 }

@@ -88,6 +88,17 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
     }
   };
 
+  const goPrevious = () => {
+    if (currentIdx === 0) return;
+
+    const previousIdx = currentIdx - 1;
+    const previousResult = results[previousIdx];
+    setCurrentIdx(previousIdx);
+    setUserAnswer(previousResult?.userAnswer || '');
+    setFillInput(previousResult?.userAnswer || '');
+    setShowExplanation(Boolean(previousResult));
+  };
+
   const scoreCount = results.filter(r => r.correct).length;
   const scorePercent = totalCount > 0 ? Math.round((scoreCount / totalCount) * 100) : 0;
 
@@ -301,14 +312,28 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({ articleText, difficult
         </div>
       )}
 
-      {/* 下一题 / 查看结果 */}
-      {isAnswered && (
-        <button
-          onClick={goNext}
-          className="flex w-full items-center justify-center gap-1.5 border-2 border-slate-800 bg-amber-300 py-3 font-semibold text-slate-900 shadow-[3px_3px_0_#7c2d12] transition-all hover:bg-amber-400"
-        >
-          {isLast ? <><Trophy className="w-4 h-4" /> 查看结果</> : <>下一题 <ChevronRight className="w-4 h-4" /></>}
-        </button>
+      {/* 题目导航 */}
+      {(currentIdx > 0 || isAnswered) && (
+        <div className="flex gap-3">
+          {currentIdx > 0 && (
+            <button
+              type="button"
+              onClick={goPrevious}
+              className="flex flex-1 items-center justify-center gap-1.5 border-2 border-slate-800 bg-[#fff9e8] py-3 font-semibold text-slate-800 shadow-[3px_3px_0_#7d9b68] transition-all hover:bg-[#fff4cc]"
+            >
+              <ChevronLeft className="w-4 h-4" /> 上一题
+            </button>
+          )}
+          {isAnswered && (
+            <button
+              type="button"
+              onClick={goNext}
+              className="flex flex-1 items-center justify-center gap-1.5 border-2 border-slate-800 bg-amber-300 py-3 font-semibold text-slate-900 shadow-[3px_3px_0_#7c2d12] transition-all hover:bg-amber-400"
+            >
+              {isLast ? <><Trophy className="w-4 h-4" /> 查看结果</> : <>下一题 <ChevronRight className="w-4 h-4" /></>}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
