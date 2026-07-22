@@ -29,7 +29,12 @@ pixel-english-town/
 │           ├── utils/
 │           │   └── response.ts  # 统一 ApiResponse 工厂
 │           └── modules/
-│               └── auth/        # 已迁移的认证领域模块
+│               ├── auth/        # 已迁移的认证领域模块
+│               │   ├── routes.ts
+│               │   ├── controller.ts
+│               │   ├── service.ts
+│               │   └── types.ts
+│               └── articles/    # 已迁移的文章列表与详情
 │                   ├── routes.ts
 │                   ├── controller.ts
 │                   ├── service.ts
@@ -72,11 +77,10 @@ pixel-english-town/
 | `controller.ts` | 参数校验、调用 service、Cookie/JWT 与 HTTP 响应 | 不直接操作 Prisma                 |
 | `routes.ts`     | 路径、HTTP 方法、preHandler 与 controller 绑定  | 不写业务逻辑                      |
 
-当前已迁移模块为 `auth`。后续按业务迁移节奏新增同级模块，例如：
+当前已迁移模块为 `auth` 与 `articles`（仅文章列表、详情）。后续按业务迁移节奏新增同级模块，例如：
 
 ```text
 modules/
-├── articles/    # 文章列表、详情与后台文章管理
 ├── learning/    # 完成文章、学习进度
 ├── questions/   # 作答、收藏、错题
 ├── quiz/        # AI 出题与任务查询

@@ -9,6 +9,7 @@ import type { ApiEnv } from './config/env.js';
 import { registerAuthMiddleware } from './middleware/auth.js';
 import { registerErrorHandler } from './middleware/error.js';
 import { registerAuthRoutes } from './modules/auth/routes.js';
+import { registerArticleRoutes } from './modules/articles/routes.js';
 import { response } from './utils/response.js';
 
 interface HealthData {
@@ -32,6 +33,9 @@ export async function buildApp(env: ApiEnv): Promise<FastifyInstance> {
   await app.register(helmet);
   await app.register((instance, _options, done) => {
     void registerAuthRoutes(instance).then(() => done(), done);
+  });
+  await app.register((instance, _options, done) => {
+    void registerArticleRoutes(instance).then(() => done(), done);
   });
 
   registerErrorHandler(app);

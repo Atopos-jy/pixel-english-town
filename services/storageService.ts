@@ -1,13 +1,20 @@
 import { UserProgress, Article } from '../types';
 
+type ArticleListResponse = {
+  code: number;
+  data: Article[] | null;
+  message: string;
+};
+
 // API Service to replace LocalStorage
 // Note: In a real app you might use SWR or React Query
 
 export const getArticles = async (): Promise<Article[]> => {
   try {
-    const res = await fetch('/api/articles');
+    const res = await fetch('/api/v1/articles');
     if (!res.ok) throw new Error('Failed to fetch articles');
-    return res.json();
+    const result = (await res.json()) as ArticleListResponse;
+    return result.data ?? [];
   } catch (e) {
     console.error(e);
     return [];
