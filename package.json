@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:api": "pnpm --filter @pixel-english-town/api dev",
     "socket": "node server/socket-server.mjs",
     "build": "next build",
+    "build:api": "pnpm --filter @pixel-english-town/api build",
     "start": "next start",
     "lint": "eslint .",
     "format:check": "prettier --check .",
