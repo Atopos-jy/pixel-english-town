@@ -12,6 +12,7 @@ import { registerErrorHandler } from './middleware/error.js';
 import { registerAuthRoutes } from './modules/auth/routes.js';
 import { registerArticleRoutes } from './modules/articles/routes.js';
 import { registerLearningRoutes } from './modules/learning/routes.js';
+import { registerQuestionRoutes } from './modules/questions/routes.js';
 import { response } from './utils/response.js';
 
 interface HealthData {
@@ -43,6 +44,9 @@ export async function buildApp(env: ApiEnv): Promise<FastifyInstance> {
   });
   await app.register((instance, _options, done) => {
     void registerLearningRoutes(instance).then(() => done(), done);
+  });
+  await app.register((instance, _options, done) => {
+    void registerQuestionRoutes(instance).then(() => done(), done);
   });
 
   registerErrorHandler(app);

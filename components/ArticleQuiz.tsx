@@ -113,8 +113,8 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
       if (!res.ok) throw new Error(data.error || '生成失败');
       setGenerationJobId(data.job.id);
       onGenerationJobChange?.(data.job.id);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : '生成失败');
       setPhase('idle');
     }
   };
@@ -125,7 +125,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
     setError(null);
 
     try {
-      const response = await fetch(`/api/questions/${currentQuestion.id}/attempt`, {
+      const response = await fetch(`/api/v1/questions/${currentQuestion.id}/attempt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ answer }),
@@ -185,7 +185,7 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
     setError(null);
 
     try {
-      const response = await fetch(`/api/questions/${questionId}/bookmark`, {
+      const response = await fetch(`/api/v1/questions/${questionId}/bookmark`, {
         method: isBookmarked ? 'DELETE' : 'POST',
       });
       const data = await response.json();
