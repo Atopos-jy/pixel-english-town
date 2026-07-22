@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserProgress } from '@/types';
 import { getProgress } from '@/services/storageService';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProgressContextType {
   progress: UserProgress | null;
@@ -15,7 +15,7 @@ interface ProgressContextType {
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
 
 export function ProgressProvider({ children }: { children: React.ReactNode }) {
-  const { status } = useSession();
+  const { status } = useAuth();
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,12 +30,10 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (status === 'authenticated' && !hasFetchedRef.current) {
-      console.log('[ProgressContext] 首次获取进度数据');
       isFetchingRef.current = true;
-      
+
       getProgress()
         .then((data) => {
-          console.log('[ProgressContext] 进度数据获取成功');
           setProgress(data);
           setError(null);
           hasFetchedRef.current = true;
@@ -62,14 +60,12 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProgress = useCallback(async () => {
     if (status !== 'authenticated') return;
-    
-    console.log('[ProgressContext] 手动刷新进度数据');
+
     try {
       setLoading(true);
       setError(null);
       const data = await getProgress();
       setProgress(data);
-      console.log('[ProgressContext] 进度数据刷新成功');
     } catch (err) {
       console.error('[ProgressContext] 刷新进度失败:', err);
       setError(err instanceof Error ? err.message : '刷新进度失败');

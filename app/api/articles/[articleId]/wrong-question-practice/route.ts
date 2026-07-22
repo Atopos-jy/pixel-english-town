@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-const pickRandom = <T,>(items: T[], count: number) => {
+const pickRandom = <T>(items: T[], count: number) => {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const randomIndex = Math.floor(Math.random() * (index + 1));

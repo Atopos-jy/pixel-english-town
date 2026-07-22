@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { AuthForm } from '@/components/AuthForm';
 import { Loading } from '@/components/Loading';
 
@@ -46,7 +46,7 @@ function TypewriterText({ text }: TypewriterTextProps) {
 }
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
+  const { user, status } = useAuth();
   const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
 
@@ -54,7 +54,7 @@ export default function HomePage() {
 
   const isReturningUser = status === 'authenticated';
   const introText = isReturningUser
-    ? `欢迎回到小镇，${session?.user?.name || '学习者'}阅读、练习、收集徽章。学习广场已经亮起灯火，等你加入。`
+    ? `欢迎回到小镇，${user?.name || '学习者'}阅读、练习、收集徽章。学习广场已经亮起灯火，等你加入。`
     : 'PIXEL ENGLISH TOWN在小镇里，开始今天的英语冒险阅读、练习、收集徽章。学习广场已经亮起灯火，等你加入。';
 
   return (

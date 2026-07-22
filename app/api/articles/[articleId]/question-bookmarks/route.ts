@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -15,7 +15,11 @@ export async function GET(req: NextRequest, { params }: { params: { articleId: s
   const category = searchParams.get('category') || 'all';
   const type = searchParams.get('type') || 'all';
   const wrongCount = searchParams.get('wrongCount') || 'all';
-  if (!categories.has(category) || (type !== 'all' && !questionTypes.has(type)) || !['all', '1', '2', '3'].includes(wrongCount)) {
+  if (
+    !categories.has(category) ||
+    (type !== 'all' && !questionTypes.has(type)) ||
+    !['all', '1', '2', '3'].includes(wrongCount)
+  ) {
     return NextResponse.json({ error: '筛选参数无效。' }, { status: 400 });
   }
 
@@ -25,7 +29,8 @@ export async function GET(req: NextRequest, { params }: { params: { articleId: s
     stateWhere.wrongCount = 0;
   }
   if (category === 'wrong') {
-    stateWhere.wrongCount = wrongCount === '1' ? 1 : wrongCount === '2' ? 2 : wrongCount === '3' ? { gte: 3 } : { gt: 0 };
+    stateWhere.wrongCount =
+      wrongCount === '1' ? 1 : wrongCount === '2' ? 2 : wrongCount === '3' ? { gte: 3 } : { gt: 0 };
   }
 
   const states = await prisma.userQuestionState.findMany({

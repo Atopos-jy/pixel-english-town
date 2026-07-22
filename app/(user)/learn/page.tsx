@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { BookOpen, Check, X } from 'lucide-react';
 import { ArticleReader } from '@/components/ArticleReader';
 import { ArticleShelf } from '@/components/ArticleShelf';
@@ -14,7 +14,7 @@ import { useProgress } from '@/contexts/ProgressContext';
 import { Article, PublicQuizQuestion } from '@/types';
 
 export default function LearnPage() {
-  const { status } = useSession();
+  const { status } = useAuth();
   const { progress, loading: progressLoading, refreshProgress } = useProgress();
   const [articles, setArticles] = useState<Article[]>([]);
   const [article, setArticle] = useState<Article | null>(null);
@@ -26,7 +26,9 @@ export default function LearnPage() {
   const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
   const [isShelfOpen, setIsShelfOpen] = useState(false);
   const [isQuestionFolderOpen, setIsQuestionFolderOpen] = useState(false);
-  const [practiceSession, setPracticeSession] = useState<{ questions: PublicQuizQuestion[]; title: string } | null>(null);
+  const [practiceSession, setPracticeSession] = useState<{ questions: PublicQuizQuestion[]; title: string } | null>(
+    null,
+  );
   const [aiSettingsDraft, setAiSettingsDraft] = useState<AiSettingsDraft>({
     provider: 'deepseek',
     apiKey: '',
@@ -44,7 +46,7 @@ export default function LearnPage() {
       .finally(() => setLoading(false));
 
     fetch('/api/ai/settings')
-      .then((response) => response.ok ? response.json() : null)
+      .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         if (!data?.settings) return;
         setAiSettingsDraft({
@@ -106,11 +108,7 @@ export default function LearnPage() {
   const completeArticle = async () => {
     const result = await markArticleComplete(article);
     await refreshProgress();
-    setNotice(
-      result.newBadges.length
-        ? `获得徽章：${result.newBadges.join('、')}`
-        : '文章已完成，学习记录已更新。',
-    );
+    setNotice(result.newBadges.length ? `获得徽章：${result.newBadges.join('、')}` : '文章已完成，学习记录已更新。');
   };
 
   const requestCloseQuiz = () => {
@@ -164,7 +162,8 @@ export default function LearnPage() {
                 <span className="mt-1 block text-xs text-slate-500">{item.title.en}</span>
                 {progress.completedArticleIds.includes(item.id) && (
                   <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
-                    <Check size={13} />已完成
+                    <Check size={13} />
+                    已完成
                   </span>
                 )}
               </button>
@@ -193,7 +192,10 @@ export default function LearnPage() {
             className="absolute inset-0 cursor-default bg-slate-950/20"
             onClick={() => setIsShelfOpen(false)}
           />
-          <aside aria-label="文章书架" className="relative flex h-full w-[min(84vw,340px)] flex-col border-r-2 border-slate-800 bg-[#fff9e8] shadow-[5px_0_0_#7d9b68]">
+          <aside
+            aria-label="文章书架"
+            className="relative flex h-full w-[min(84vw,340px)] flex-col border-r-2 border-slate-800 bg-[#fff9e8] shadow-[5px_0_0_#7d9b68]"
+          >
             <button
               type="button"
               aria-label="关闭文章书架"
@@ -285,7 +287,7 @@ export default function LearnPage() {
                 body: JSON.stringify({ configuration: settings }),
               });
               const data = await response.json();
-              setNotice(response.ok ? 'AI 连接成功，可以开始测验。' : (data.error || 'AI 连接失败。'));
+              setNotice(response.ok ? 'AI 连接成功，可以开始测验。' : data.error || 'AI 连接失败。');
             } catch {
               setNotice('无法连接到 AI 服务，请检查网络后重试。');
             }
@@ -294,9 +296,17 @@ export default function LearnPage() {
       )}
 
       {notice && (
-        <div role="status" className="fixed right-5 top-20 z-[60] flex max-w-[calc(100vw-2.5rem)] items-start gap-3 border-2 border-slate-900 bg-amber-300 px-4 py-3 text-sm font-black text-slate-900 shadow-[4px_4px_0_#7c2d12]">
+        <div
+          role="status"
+          className="fixed right-5 top-20 z-[60] flex max-w-[calc(100vw-2.5rem)] items-start gap-3 border-2 border-slate-900 bg-amber-300 px-4 py-3 text-sm font-black text-slate-900 shadow-[4px_4px_0_#7c2d12]"
+        >
           <span>{notice}</span>
-          <button type="button" onClick={() => setNotice(null)} aria-label="关闭提示" className="-mr-1 -mt-1 border-2 border-slate-800 bg-[#fff9e8] p-0.5 text-slate-800 transition hover:bg-[#fff4cc]">
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            aria-label="关闭提示"
+            className="-mr-1 -mt-1 border-2 border-slate-800 bg-[#fff9e8] p-0.5 text-slate-800 transition hover:bg-[#fff4cc]"
+          >
             <X size={14} />
           </button>
         </div>

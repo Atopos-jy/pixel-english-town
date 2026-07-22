@@ -1,15 +1,15 @@
 'use client';
 
-import { SessionProvider } from 'next-auth/react';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { ProgressProvider } from '@/contexts/ProgressContext';
 import { PlazaProvider } from '@/contexts/PlazaContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    <AuthProvider>
       <ProgressProvider>
         <PlazaProvider>{children}</PlazaProvider>
       </ProgressProvider>
-    </SessionProvider>
+    </AuthProvider>
   );
 }

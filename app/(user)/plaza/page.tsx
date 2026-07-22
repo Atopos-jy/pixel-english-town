@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 import { Loading } from '@/components/Loading';
@@ -26,7 +26,7 @@ function formatActivityTime(createdAt: string): string {
 }
 
 export default function PlazaPage() {
-  const { status } = useSession();
+  const { status } = useAuth();
   const router = useRouter();
   const { onlineCount, activities, leaderboards, realtimeActivity } = usePlaza();
   const [activeLeaderboard, setActiveLeaderboard] = useState<ActiveLeaderboard>('daily');

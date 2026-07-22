@@ -1,12 +1,12 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/components/Loading';
 import { TownMap } from '@/components/TownMap';
 
 export default function TownPage() {
-  const { status } = useSession();
+  const { status } = useAuth();
   const router = useRouter();
 
   if (status === 'loading') return <Loading />;

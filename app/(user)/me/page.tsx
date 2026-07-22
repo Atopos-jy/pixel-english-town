@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { KeyRound, MapPinned, Sparkles } from 'lucide-react';
 import { Loading } from '@/components/Loading';
 import { StatsDashboard } from '@/components/StatsDashboard';
@@ -8,7 +8,7 @@ import { useProgress } from '@/contexts/ProgressContext';
 import { useRouter } from 'next/navigation';
 
 export default function MePage() {
-  const { data: session, status } = useSession();
+  const { user, status } = useAuth();
   const { progress, loading } = useProgress();
   const router = useRouter();
 
@@ -18,7 +18,7 @@ export default function MePage() {
     return <Loading />;
   }
 
-  const userName = session.user?.name || '学习者';
+  const userName = user?.name || '学习者';
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#dbe8cf] px-4 py-6 md:px-8 md:py-10">

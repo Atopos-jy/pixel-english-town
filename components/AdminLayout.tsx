@@ -1,11 +1,10 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { LayoutDashboard, FileText, Users, Award, LogOut } from 'lucide-react';
-import { signOut } from 'next-auth/react';
 import '@/app/admin/admin.css';
 
 interface AdminLayoutProps {
@@ -13,23 +12,23 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { data: session, status } = useSession();
+  const { user, status, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     // 如果未登录或不是管理员，重定向到首页
     if (status === 'loading') return;
 
-    if (!session || !session.user) {
+    if (!user) {
       router.push('/');
       return;
     }
 
-    if (session.user.role !== 'admin') {
+    if (user.role !== 'admin') {
       router.push('/');
       return;
     }
-  }, [session, status, router]);
+  }, [user, status, router]);
 
   // 加载中或未授权时不显示内容
   if (status === 'loading') {
@@ -40,12 +39,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!session || !session.user || session.user.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return null;
   }
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' });
+    await logout();
+    router.push('/');
   };
 
   return (
@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <aside className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-gray-800">管理后台</h1>
-          <p className="text-sm text-gray-500 mt-1">{session.user.email}</p>
+          <p className="text-sm text-gray-500 mt-1">{user.email}</p>
         </div>
 
         <nav className="mt-6">

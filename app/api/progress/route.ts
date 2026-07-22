@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withRetry } from '@/lib/db-utils';
 import { Difficulty } from '@/types';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 

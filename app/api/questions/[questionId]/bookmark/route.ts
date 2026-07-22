@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-const getOwnedQuestion = async (questionId: string, userId: string) => prisma.articleQuestion.findFirst({
-  where: { id: questionId, createdByUserId: userId },
-  select: { id: true },
-});
+const getOwnedQuestion = async (questionId: string, userId: string) =>
+  prisma.articleQuestion.findFirst({
+    where: { id: questionId, createdByUserId: userId },
+    select: { id: true },
+  });
 
 export async function POST(_: Request, { params }: { params: { questionId: string } }) {
   const session = await getServerSession(authOptions);

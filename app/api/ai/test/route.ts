@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { getAiConfigurationValidationError, getQuizProvider, isSupportedAiConfiguration } from '@/lib/ai/quiz-provider';
 import { takeAiRequestSlot } from '@/lib/ai/rate-limit';
@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
 
   const rateLimit = takeAiRequestSlot(session.user?.email || 'anonymous', 'test');
   if (!rateLimit.allowed) {
-    return NextResponse.json({ error: `测试过于频繁，请在 ${rateLimit.retryAfterSeconds} 秒后重试。` }, { status: 429 });
+    return NextResponse.json(
+      { error: `测试过于频繁，请在 ${rateLimit.retryAfterSeconds} 秒后重试。` },
+      { status: 429 },
+    );
   }
 
   const body = await req.json().catch(() => null);
@@ -40,7 +43,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'AI 服务暂时不可用。';
-    console.error('AI connection test failed', { provider: configuration.provider, model: configuration.model, message });
+    console.error('AI connection test failed', {
+      provider: configuration.provider,
+      model: configuration.model,
+      message,
+    });
     return NextResponse.json({ error: `连接失败：${message}` }, { status: 502 });
   }
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { startQuizGenerationJob } from '@/lib/ai/quiz-generation-jobs';
@@ -25,12 +25,15 @@ export async function GET(_req: NextRequest, { params }: { params: { jobId: stri
       articleId: job.articleId,
       status: job.status,
       error: job.error,
-      questions: job.status === 'completed' ? job.questions.map((question) => ({
-        id: question.id,
-        type: question.type,
-        question: question.stem,
-        options: question.options,
-      })) : undefined,
+      questions:
+        job.status === 'completed'
+          ? job.questions.map((question) => ({
+              id: question.id,
+              type: question.type,
+              question: question.stem,
+              options: question.options,
+            }))
+          : undefined,
     },
   });
 }

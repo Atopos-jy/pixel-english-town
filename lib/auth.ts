@@ -1,94 +1,42 @@
-import { AuthOptions } from 'next-auth';
-import { getServerSession } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import { jwtVerify } from 'jose';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
 
-export const authOptions: AuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+const cookieName = 'pixel-town.token';
+const authOptions = {};
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+export { authOptions };
 
-        if (!user) {
-          return null;
-        }
-
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role, // 包含用户角色
-        };
-      },
-    }),
-  ],
-  session: {
-    strategy: 'jwt',
-  },
-  pages: {
-    signIn: '/',
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      // 当用户首次登录时，将角色添加到令牌中
-      if (user) {
-        token.role = user.role;
-        token.id = user.id;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-      }
-      return session;
-    },
-  },
+export type AuthSession = {
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: string;
+  };
 };
 
-/**
- * 验证管理员权限
- * @returns 如果是管理员返回 session，否则返回错误信息
- */
+export async function getServerSession(_options?: unknown): Promise<AuthSession | null> {
+  const token = cookies().get(cookieName)?.value;
+  const secret = process.env.JWT_SECRET;
+  if (!token || !secret) return null;
+
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ['HS256'] });
+    if (typeof payload.sub !== 'string' || typeof payload.sid !== 'string') return null;
+    const session = await prisma.userSession.findFirst({
+      where: { id: payload.sid, userId: payload.sub, revokedAt: null, expiresAt: { gt: new Date() } },
+      include: { user: { select: { id: true, email: true, name: true, role: true } } },
+    });
+    return session ? { user: session.user } : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user) {
-    return {
-      error: 'Unauthorized',
-      status: 401,
-    };
-  }
-
-  if (session.user.role !== 'admin') {
-    return {
-      error: 'Forbidden - Admin access required',
-      status: 403,
-    };
-  }
-
-  return {
-    session,
-    error: null,
-    status: 200,
-  };
+  const session = await getServerSession();
+  if (!session) return { error: 'Unauthorized', status: 401, session: null };
+  if (session.user.role !== 'admin') return { error: 'Forbidden - Admin access required', status: 403, session: null };
+  return { session, error: null, status: 200 };
 }

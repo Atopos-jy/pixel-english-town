@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { takeAiRequestSlot } from '@/lib/ai/rate-limit';
 import { prisma } from '@/lib/prisma';
@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
 
   const rateLimit = takeAiRequestSlot(session.user?.email || 'anonymous', 'generate');
   if (!rateLimit.allowed) {
-    return NextResponse.json({ error: `请求过于频繁，请在 ${rateLimit.retryAfterSeconds} 秒后重试。` }, { status: 429 });
+    return NextResponse.json(
+      { error: `请求过于频繁，请在 ${rateLimit.retryAfterSeconds} 秒后重试。` },
+      { status: 429 },
+    );
   }
 
   const body = await req.json().catch(() => null);
