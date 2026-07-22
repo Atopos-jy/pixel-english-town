@@ -6,10 +6,12 @@ import jwt from '@fastify/jwt';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { createPrismaClient, registerDatabase } from './config/database.js';
 import type { ApiEnv } from './config/env.js';
+import { createRedisClient, registerRedis } from './config/redis.js';
 import { registerAuthMiddleware } from './middleware/auth.js';
 import { registerErrorHandler } from './middleware/error.js';
 import { registerAuthRoutes } from './modules/auth/routes.js';
 import { registerArticleRoutes } from './modules/articles/routes.js';
+import { registerLearningRoutes } from './modules/learning/routes.js';
 import { response } from './utils/response.js';
 
 interface HealthData {
@@ -20,7 +22,9 @@ interface HealthData {
 export async function buildApp(env: ApiEnv): Promise<FastifyInstance> {
   const app = Fastify({ logger: true });
   const prisma = createPrismaClient(env);
+  const redis = createRedisClient(env);
   registerDatabase(app, prisma);
+  registerRedis(app, redis);
   app.decorate('env', env);
   registerAuthMiddleware(app);
 
@@ -36,6 +40,9 @@ export async function buildApp(env: ApiEnv): Promise<FastifyInstance> {
   });
   await app.register((instance, _options, done) => {
     void registerArticleRoutes(instance).then(() => done(), done);
+  });
+  await app.register((instance, _options, done) => {
+    void registerLearningRoutes(instance).then(() => done(), done);
   });
 
   registerErrorHandler(app);

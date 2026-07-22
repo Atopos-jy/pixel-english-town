@@ -23,9 +23,10 @@ export const getArticles = async (): Promise<Article[]> => {
 
 export const getProgress = async (): Promise<UserProgress | null> => {
   try {
-    const res = await fetch('/api/progress');
+    const res = await fetch('/api/v1/learning/progress');
     if (!res.ok) throw new Error('Failed to fetch progress');
-    return res.json();
+    const result = (await res.json()) as { data: UserProgress | null };
+    return result.data;
   } catch (e) {
     console.error(e);
     return null;
@@ -45,7 +46,7 @@ export const markArticleComplete = async (
   article: Article,
 ): Promise<{ progress: UserProgress | null; newBadges: string[] }> => {
   try {
-    const res = await fetch('/api/progress/complete', {
+    const res = await fetch('/api/v1/learning/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -55,7 +56,7 @@ export const markArticleComplete = async (
     });
 
     if (!res.ok) throw new Error('Failed to update');
-    const result = (await res.json()) as CompleteArticleResponse;
+    const result = (await res.json()) as { data: CompleteArticleResponse['data'] };
     return {
       progress: result.data?.progress ?? null,
       newBadges: result.data?.newBadges ?? [],

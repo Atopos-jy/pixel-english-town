@@ -39,6 +39,11 @@ pixel-english-town/
 │                   ├── controller.ts
 │                   ├── service.ts
 │                   └── types.ts
+│               └── learning/    # 已迁移的学习进度与完成文章
+│                   ├── routes.ts
+│                   ├── controller.ts
+│                   ├── service.ts
+│                   └── types.ts
 ├── packages/
 │   └── contracts/               # 前后端共享 ApiResponse、ApiCode 等类型
 ├── .env                         # 当前根目录环境变量文件（不提交）
@@ -77,11 +82,10 @@ pixel-english-town/
 | `controller.ts` | 参数校验、调用 service、Cookie/JWT 与 HTTP 响应 | 不直接操作 Prisma                 |
 | `routes.ts`     | 路径、HTTP 方法、preHandler 与 controller 绑定  | 不写业务逻辑                      |
 
-当前已迁移模块为 `auth` 与 `articles`（仅文章列表、详情）。后续按业务迁移节奏新增同级模块，例如：
+当前已迁移模块为 `auth`、`articles`（仅文章列表、详情）与 `learning`（学习进度、完成文章）。后续按业务迁移节奏新增同级模块，例如：
 
 ```text
 modules/
-├── learning/    # 完成文章、学习进度
 ├── questions/   # 作答、收藏、错题
 ├── quiz/        # AI 出题与任务查询
 ├── badges/      # 徽章
