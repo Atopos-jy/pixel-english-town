@@ -45,15 +45,15 @@ export default function LearnPage() {
       })
       .finally(() => setLoading(false));
 
-    fetch('/api/ai/settings')
+    fetch('/api/v1/ai/settings')
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (!data?.settings) return;
+        if (!data?.data?.settings) return;
         setAiSettingsDraft({
-          provider: data.settings.provider,
-          model: data.settings.model,
+          provider: data.data.settings.provider,
+          model: data.data.settings.model,
           apiKey: '',
-          apiKeyLast4: data.settings.apiKeyLast4,
+          apiKeyLast4: data.data.settings.apiKeyLast4,
         });
       })
       .catch(() => undefined);
@@ -260,19 +260,19 @@ export default function LearnPage() {
           onClose={() => setIsAiSettingsOpen(false)}
           onSaveDraft={async (settings) => {
             try {
-              const response = await fetch('/api/ai/settings', {
+              const response = await fetch('/api/v1/ai/settings', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ configuration: settings }),
               });
               const data = await response.json();
-              if (!response.ok) return { ok: false, error: data.error || 'AI 设置保存失败。' };
+              if (!response.ok) return { ok: false, error: data.message || 'AI 设置保存失败。' };
 
               setAiSettingsDraft({
-                provider: data.settings.provider,
-                model: data.settings.model,
+                provider: data.data.settings.provider,
+                model: data.data.settings.model,
                 apiKey: '',
-                apiKeyLast4: data.settings.apiKeyLast4,
+                apiKeyLast4: data.data.settings.apiKeyLast4,
               });
               setNotice(`${settings.provider === 'deepseek' ? 'DeepSeek' : 'MiMo'} 设置已加密保存。`);
               return { ok: true };
@@ -283,13 +283,13 @@ export default function LearnPage() {
           onRequestTest={async (settings) => {
             setNotice('正在测试 AI 连接…');
             try {
-              const response = await fetch('/api/ai/test', {
+              const response = await fetch('/api/v1/ai/test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ configuration: settings }),
               });
               const data = await response.json();
-              setNotice(response.ok ? 'AI 连接成功，可以开始测验。' : data.error || 'AI 连接失败。');
+              setNotice(response.ok ? 'AI 连接成功，可以开始测验。' : data.message || 'AI 连接失败。');
             } catch {
               setNotice('无法连接到 AI 服务，请检查网络后重试。');
             }
