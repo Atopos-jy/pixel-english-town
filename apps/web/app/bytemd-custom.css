@@ -1,7 +1,5 @@
 /* 隐藏 ByteMD 编辑器中的代码和代码块按钮 */
 
-
-
 /* 修复 ByteMD 编辑器预览区域的 Markdown 渲染 */
 .bytemd-preview .markdown-body h1,
 .bytemd-preview .markdown-body h2,
@@ -88,7 +86,14 @@
   padding: 0.2em 0.4em !important;
   border-radius: 6px !important;
   font-size: 85% !important;
-  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    SF Mono,
+    Menlo,
+    Consolas,
+    Liberation Mono,
+    monospace !important;
 }
 
 .bytemd-preview .markdown-body blockquote {
@@ -198,7 +203,14 @@
   padding: 0.2em 0.4em !important;
   border-radius: 6px !important;
   font-size: 85% !important;
-  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    SF Mono,
+    Menlo,
+    Consolas,
+    Liberation Mono,
+    monospace !important;
 }
 
 .bytemd-viewer .markdown-body blockquote {
@@ -207,9 +219,9 @@
   color: #656d76 !important;
   margin: 1em 0 !important;
 }
-.bytemd .bytemd-toolbar-right > .bytemd-toolbar-icon:nth-child(4){
+.bytemd .bytemd-toolbar-right > .bytemd-toolbar-icon:nth-child(4) {
   display: none !important;
 }
-.bytemd .bytemd-toolbar-left > .bytemd-toolbar-icon:nth-child(7){
+.bytemd .bytemd-toolbar-left > .bytemd-toolbar-icon:nth-child(7) {
   display: none !important;
 }
