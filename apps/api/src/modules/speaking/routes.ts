@@ -10,4 +10,5 @@ export async function registerSpeakingRoutes(app: FastifyInstance): Promise<void
   const requireAuth = createRequireAuth(createAuthService({ prisma: app.prisma }));
 
   app.post('/api/v1/speaking-eval', { preHandler: requireAuth }, controller.evaluate);
+  app.post('/api/v1/speaking/word-match', { preHandler: requireAuth }, controller.matchWord);
 }
