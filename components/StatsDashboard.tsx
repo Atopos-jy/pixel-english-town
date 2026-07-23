@@ -75,10 +75,10 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ stats }) => {
   const [badges, setBadges] = useState<BadgeDefinition[]>(DEFAULT_BADGES);
 
   useEffect(() => {
-    fetch('/api/badges')
+    fetch('/api/v1/badges')
       .then(async (response) => {
-        const result = (await response.json()) as { success: boolean; data: BadgeDefinition[] | null };
-        if (response.ok && result.success && result.data) setBadges(result.data);
+        const result = (await response.json()) as { code: number; data: BadgeDefinition[] | null };
+        if (response.ok && result.code === 0 && result.data) setBadges(result.data);
       })
       .catch(() => undefined);
   }, []);
