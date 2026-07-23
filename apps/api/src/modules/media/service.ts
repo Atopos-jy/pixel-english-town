@@ -49,34 +49,34 @@ export function createMediaService({ prisma, env }: MediaServiceDependencies): M
       const article = await prisma.article.findUnique({ where: { id: articleId } });
       if (!article) return { kind: 'notFound', message: '文章不存在' };
       if (!article.audioUrl) return { kind: 'noAudio', message: '该文章没有音频文件' };
-      if (!env.GROQ_API_KEY) return { kind: 'error', message: '服务器未配置 GROQ_API_KEY' };
+      if (!env.DEEPGRAM_API_KEY) return { kind: 'error', message: '服务器未配置 DEEPGRAM_API_KEY' };
 
       const audio = await fetch(article.audioUrl);
       if (!audio.ok) throw new Error('下载音频文件失败');
 
       const extension = article.audioUrl.split('?')[0].split('.').pop()?.toLowerCase() || 'mp3';
-      const form = new FormData();
-      form.append(
-        'file',
-        new File([await audio.arrayBuffer()], `audio.${extension}`, {
-          type: audioMimeTypes[extension] || 'audio/mpeg',
-        }),
-      );
-      form.append('model', 'whisper-large-v3-turbo');
-      form.append('response_format', 'verbose_json');
-      form.append('timestamp_granularities[]', 'word');
+      const mimeType = audioMimeTypes[extension] || 'audio/mpeg';
+      const arrayBuffer = await audio.arrayBuffer();
 
-      const result = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      const result = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&language=en&smart_format=true', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${env.GROQ_API_KEY}` },
-        body: form,
+        headers: {
+          Authorization: `Token ${env.DEEPGRAM_API_KEY}`,
+          'Content-Type': mimeType,
+        },
+        body: Buffer.from(arrayBuffer),
       });
 
-      const payload = (await result.json()) as { words?: unknown; error?: { message?: string } };
-      if (!result.ok) throw new Error(`Whisper API 调用失败: ${payload.error?.message || '未知错误'}`);
+      const payload = (await result.json()) as {
+        err_msg?: string;
+        error?: string;
+        results?: { channels?: Array<{ alternatives?: Array<{ transcript?: string; words?: unknown }> }> };
+      };
+      if (!result.ok) throw new Error(`Deepgram 转写失败: ${payload.err_msg || payload.error || '未知错误'}`);
 
-      const words = wordTimestampSchema.safeParse(payload.words);
-      if (!words.success || !words.data.length) throw new Error('Whisper 未返回逐词时间戳，请确认音频清晰度');
+      const alternative = payload.results?.channels?.[0]?.alternatives?.[0];
+      const words = wordTimestampSchema.safeParse(alternative?.words ?? []);
+      if (!words.success || !words.data.length) throw new Error('Deepgram 未返回逐词时间戳，请确认音频清晰度');
 
       await prisma.article.update({ where: { id: article.id }, data: { wordTimestamps: words.data } });
       return { wordCount: words.data.length };

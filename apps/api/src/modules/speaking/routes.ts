@@ -5,7 +5,7 @@ import { createSpeakingController } from './controller.js';
 import { createSpeakingService } from './service.js';
 
 export async function registerSpeakingRoutes(app: FastifyInstance): Promise<void> {
-  const service = createSpeakingService({ groqApiKey: app.env.GROQ_API_KEY || '' });
+  const service = createSpeakingService({ deepgramApiKey: app.env.DEEPGRAM_API_KEY || '' });
   const controller = createSpeakingController(service);
   const requireAuth = createRequireAuth(createAuthService({ prisma: app.prisma }));
 

@@ -8,7 +8,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32),
   AI_SETTINGS_ENCRYPTION_KEY: z.string().min(1),
-  GROQ_API_KEY: z.string().optional(),
+  DEEPGRAM_API_KEY: z.string().optional(),
   OSS_SECRET_ID: z.string().optional(),
   OSS_SECRET_KEY: z.string().optional(),
   OSS_BUCKET: z.string().optional(),

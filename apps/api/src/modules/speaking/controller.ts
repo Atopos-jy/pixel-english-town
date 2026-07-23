@@ -12,8 +12,8 @@ export function createSpeakingController(service: SpeakingService) {
       const session = request.authenticatedSession;
       if (!session) return reply.status(401).send(response(ApiCode.UNAUTHORIZED, '登录已过期，请重新登录', null));
 
-      if (!request.server.env.GROQ_API_KEY) {
-        return reply.status(500).send(response(ApiCode.INTERNAL_ERROR, '服务器未配置 GROQ_API_KEY', null));
+      if (!request.server.env.DEEPGRAM_API_KEY) {
+        return reply.status(500).send(response(ApiCode.INTERNAL_ERROR, '服务器未配置 DEEPGRAM_API_KEY', null));
       }
 
       const audio = await request.file();
@@ -40,8 +40,8 @@ export function createSpeakingController(service: SpeakingService) {
       const session = request.authenticatedSession;
       if (!session) return reply.status(401).send(response(ApiCode.UNAUTHORIZED, '登录已过期，请重新登录', null));
 
-      if (!request.server.env.GROQ_API_KEY) {
-        return reply.status(500).send(response(ApiCode.INTERNAL_ERROR, '服务器未配置 GROQ_API_KEY', null));
+      if (!request.server.env.DEEPGRAM_API_KEY) {
+        return reply.status(500).send(response(ApiCode.INTERNAL_ERROR, '服务器未配置 DEEPGRAM_API_KEY', null));
       }
 
       const parsed = wordMatchQuerySchema.safeParse(request.query);

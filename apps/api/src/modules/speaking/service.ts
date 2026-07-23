@@ -1,7 +1,7 @@
 import { wordTimestampSchema, type SpeakingServiceResult, type WordMatchResult, type WordTimestamp } from './types.js';
 
 interface SpeakingServiceDependencies {
-  groqApiKey: string;
+  deepgramApiKey: string;
 }
 
 export interface SpeakingService {
@@ -45,48 +45,57 @@ function similarity(a: string, b: string): number {
   return 1 - matrix[a.length][b.length] / maxLen;
 }
 
-interface WhisperVerboseResponse {
-  text?: string;
-  words?: Array<{ word: string; start: number; end: number }>;
-  error?: { message?: string };
+interface DeepgramWord {
+  word: string;
+  start: number;
+  end: number;
+  confidence: number;
 }
 
-export function createSpeakingService({ groqApiKey }: SpeakingServiceDependencies): SpeakingService {
-  async function callWhisper(
-    audioBuffer: ArrayBuffer,
-    filename: string,
-    mimetype: string,
-  ): Promise<WhisperVerboseResponse> {
-    const form = new FormData();
-    form.append('file', new File([audioBuffer], filename || 'recording.webm', { type: mimetype || 'audio/webm' }));
-    form.append('model', 'whisper-large-v3-turbo');
-    form.append('response_format', 'verbose_json');
-    form.append('timestamp_granularities[]', 'word');
-    form.append('language', 'en');
+interface DeepgramResponse {
+  results?: {
+    channels?: Array<{
+      alternatives?: Array<{
+        transcript?: string;
+        words?: DeepgramWord[];
+      }>;
+    }>;
+  };
+}
 
-    const result = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+export function createSpeakingService({ deepgramApiKey }: SpeakingServiceDependencies): SpeakingService {
+  const DEEPGRAM_URL = 'https://api.deepgram.com/v1/listen?model=nova-2&language=en&smart_format=true';
+
+  async function callDeepgram(audioBuffer: ArrayBuffer, mimetype: string): Promise<DeepgramResponse> {
+    const result = await fetch(DEEPGRAM_URL, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${groqApiKey}` },
-      body: form,
+      headers: {
+        Authorization: `Token ${deepgramApiKey}`,
+        'Content-Type': mimetype || 'audio/webm',
+      },
+      body: Buffer.from(audioBuffer),
     });
 
     if (!result.ok) {
-      const payload = (await result.json().catch(() => null)) as { error?: { message?: string } } | null;
-      throw new Error(`转录失败: ${payload?.error?.message || '未知错误'}`);
+      const payload = (await result.json().catch(() => null)) as { err_msg?: string; error?: string } | null;
+      throw new Error(`Deepgram 转录失败: ${payload?.err_msg || payload?.error || '未知错误'}`);
     }
 
-    return (await result.json()) as WhisperVerboseResponse;
+    return (await result.json()) as DeepgramResponse;
+  }
+
+  function extractWords(response: DeepgramResponse): { transcript: string; words: WordTimestamp[] } {
+    const alternative = response.results?.channels?.[0]?.alternatives?.[0];
+    const transcript = alternative?.transcript?.trim() || '';
+    const wordsParse = wordTimestampSchema.array().safeParse(alternative?.words ?? []);
+    return { transcript, words: wordsParse.success ? wordsParse.data : [] };
   }
 
   return {
-    async transcribeWithTimestamps(audioBuffer, filename, mimetype) {
+    async transcribeWithTimestamps(audioBuffer, _filename, mimetype) {
       try {
-        const payload = await callWhisper(audioBuffer, filename, mimetype);
-        const transcript = payload.text?.trim() || '';
-        const wordsParse = wordTimestampSchema.array().safeParse(payload.words);
-        const words = wordsParse.success ? wordsParse.data : [];
-
-        return { transcript, words };
+        const payload = await callDeepgram(audioBuffer, mimetype);
+        return extractWords(payload);
       } catch (error) {
         return { kind: 'error', message: error instanceof Error ? error.message : '转录服务异常' };
       }
