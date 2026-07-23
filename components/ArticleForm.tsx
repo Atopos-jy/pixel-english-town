@@ -209,10 +209,10 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
     setTranscribing(true);
     setTranscribeResult(null);
     try {
-      const res = await fetch(`/api/admin/articles/${articleId}/transcribe`, { method: 'POST' });
+      const res = await fetch(`/api/v1/admin/articles/${articleId}/transcribe`, { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '生成失败');
-      setTranscribeResult(`成功生成 ${data.wordCount} 个单词的时间戳`);
+      if (!res.ok) throw new Error(data.message || '生成失败');
+      setTranscribeResult(`成功生成 ${data.data?.wordCount || 0} 个单词的时间戳`);
     } catch (err) {
       setTranscribeResult(err instanceof Error ? `失败: ${err.message}` : '生成失败');
     } finally {

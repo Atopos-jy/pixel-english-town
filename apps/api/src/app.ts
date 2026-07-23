@@ -3,6 +3,7 @@ import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
+import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { createPrismaClient, registerDatabase } from './config/database.js';
 import type { ApiEnv } from './config/env.js';
@@ -16,6 +17,7 @@ import { registerQuestionRoutes } from './modules/questions/routes.js';
 import { registerQuizRoutes } from './modules/quiz/routes.js';
 import { registerPlazaRoutes } from './modules/plaza/routes.js';
 import { registerAdminRoutes } from './modules/admin/routes.js';
+import { registerMediaRoutes } from './modules/media/routes.js';
 import { response } from './utils/response.js';
 
 interface HealthData {
@@ -33,6 +35,7 @@ export async function buildApp(env: ApiEnv): Promise<FastifyInstance> {
   registerAuthMiddleware(app);
 
   await app.register(cookie);
+  await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024, files: 1 } });
   await app.register(jwt, { secret: env.JWT_SECRET, cookie: { cookieName: 'pixel-town.token', signed: false } });
   await app.register(cors, {
     origin: env.WEB_ORIGIN,
@@ -59,6 +62,9 @@ export async function buildApp(env: ApiEnv): Promise<FastifyInstance> {
   });
   await app.register((instance, _options, done) => {
     void registerAdminRoutes(instance).then(() => done(), done);
+  });
+  await app.register((instance, _options, done) => {
+    void registerMediaRoutes(instance).then(() => done(), done);
   });
 
   registerErrorHandler(app);

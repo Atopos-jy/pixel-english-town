@@ -61,34 +61,75 @@ export default function OssUploader({ value, onChange, onDurationChange }: OssUp
     xhr.onload = () => {
       setUploading(false);
       if (xhr.status >= 200 && xhr.status < 300) {
-        onChange(JSON.parse(xhr.responseText).url);
+        onChange(JSON.parse(xhr.responseText).data.url);
       } else {
         const response = JSON.parse(xhr.responseText || '{}');
-        alert(`上传失败：${response.error || '未知错误'}`);
+        alert(`上传失败：${response.message || '未知错误'}`);
       }
     };
     xhr.onerror = () => {
       setUploading(false);
       alert('上传失败，请检查网络连接');
     };
-    xhr.open('POST', '/api/oss/upload');
+    xhr.open('POST', '/api/v1/admin/oss/upload');
     xhr.send(formData);
   }
 
   return (
     <div>
       <div className="flex items-center gap-3">
-        <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" disabled={uploading}
-          onChange={handleFileSelect} />
-        <button type="button" disabled={uploading} onClick={() => fileInputRef.current?.click()}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
-          <Upload className="w-4 h-4 mr-2" />{uploading ? '上传中...' : '上传音频'}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*"
+          className="hidden"
+          disabled={uploading}
+          onChange={handleFileSelect}
+        />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          {uploading ? '上传中...' : '上传音频'}
         </button>
-        {value && <button type="button" onClick={() => { onChange(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-          className="flex items-center px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg"><X className="w-4 h-4 mr-1" />清除</button>}
+        {value && (
+          <button
+            type="button"
+            onClick={() => {
+              onChange('');
+              if (fileInputRef.current) fileInputRef.current.value = '';
+            }}
+            className="flex items-center px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg"
+          >
+            <X className="w-4 h-4 mr-1" />
+            清除
+          </button>
+        )}
       </div>
-      {uploading && <div className="flex-1 mt-3"><div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} /></div><p className="text-sm text-gray-500 mt-1">{progress}%</p></div>}
-      {value && <div className="mt-3"><p className="text-sm text-gray-600 mb-2">当前音频：</p><audio controls className="w-full max-w-md"><source src={value} />您的浏览器不支持音频播放</audio><p className="text-xs text-gray-400 mt-1 break-all">{value}</p></div>}
+      {uploading && (
+        <div className="flex-1 mt-3">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-500 mt-1">{progress}%</p>
+        </div>
+      )}
+      {value && (
+        <div className="mt-3">
+          <p className="text-sm text-gray-600 mb-2">当前音频：</p>
+          <audio controls className="w-full max-w-md">
+            <source src={value} />
+            您的浏览器不支持音频播放
+          </audio>
+          <p className="text-xs text-gray-400 mt-1 break-all">{value}</p>
+        </div>
+      )}
     </div>
   );
 }
