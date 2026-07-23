@@ -7,8 +7,9 @@ import { enterSchema } from './types.js';
 
 type PlazaService = ReturnType<typeof createPlazaService>;
 
-function internalAuthorized(header: string | undefined): boolean {
-  const expected = process.env.PLAZA_INTERNAL_SECRET;
+function internalAuthorized(header: string | undefined, secret: string | undefined): boolean {
+  if (!secret) return false;
+  const expected = secret;
   const actual = header?.startsWith('Bearer ') ? header.slice(7) : '';
   if (!expected || !actual) return false;
   const left = Buffer.from(expected);
@@ -27,7 +28,11 @@ export function createPlazaController(service: PlazaService) {
     },
 
     async enter(request: FastifyRequest, reply: FastifyReply) {
-      if (!internalAuthorized(request.headers.authorization)) {
+      if (!request.server.env.PLAZA_INTERNAL_SECRET) {
+        return reply.status(500).send(response(ApiCode.INTERNAL_ERROR, '服务器未配置 PLAZA_INTERNAL_SECRET', null));
+      }
+
+      if (!internalAuthorized(request.headers.authorization, request.server.env.PLAZA_INTERNAL_SECRET)) {
         return reply.status(401).send(response(ApiCode.UNAUTHORIZED, '内部服务认证失败', null));
       }
 
