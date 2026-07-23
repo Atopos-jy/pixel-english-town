@@ -19,6 +19,7 @@ import { registerPlazaRoutes } from './modules/plaza/routes.js';
 import { registerAdminRoutes } from './modules/admin/routes.js';
 import { registerMediaRoutes } from './modules/media/routes.js';
 import { registerAiRoutes } from './modules/ai/routes.js';
+import { registerSpeakingRoutes } from './modules/speaking/routes.js';
 import { response } from './utils/response.js';
 
 interface HealthData {
@@ -69,6 +70,9 @@ export async function buildApp(env: ApiEnv): Promise<FastifyInstance> {
   });
   await app.register((instance, _options, done) => {
     void registerAiRoutes(instance).then(() => done(), done);
+  });
+  await app.register((instance, _options, done) => {
+    void registerSpeakingRoutes(instance).then(() => done(), done);
   });
 
   registerErrorHandler(app);

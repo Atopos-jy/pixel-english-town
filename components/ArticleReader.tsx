@@ -359,13 +359,14 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
       const form = new FormData();
       form.append('audio', blob, 'recording.webm');
 
-      const res = await fetch('/api/speaking-eval', { method: 'POST', body: form });
+      const res = await fetch('/api/v1/speaking-eval', { method: 'POST', body: form });
       if (!res.ok) {
-        const { error } = await res.json();
-        alert(`转录失败：${error}`);
+        const data = await res.json();
+        alert(`转录失败：${data.message || '未知错误'}`);
         return;
       }
-      const { transcript } = await res.json();
+      const { data } = (await res.json()) as { data: { transcript: string } };
+      const { transcript } = data;
 
       // 解析 sentKey → blockIdx / sentIdx
       const [blockIdxStr, sentIdxStr] = sentKey.split('-');
