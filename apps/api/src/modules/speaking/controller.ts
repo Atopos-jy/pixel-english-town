@@ -22,13 +22,18 @@ export function createSpeakingController(service: SpeakingService) {
       const buffer = await audio.toBuffer();
       const content = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
 
-      const result = await service.transcribe(content, audio.filename, audio.mimetype);
+      const result = await service.transcribeWithTimestamps(content, audio.filename, audio.mimetype);
 
-      if (result.kind === 'error') {
+      if ('kind' in result) {
         return reply.status(502).send(response(ApiCode.INTERNAL_ERROR, result.message, null));
       }
 
-      return reply.send(response(ApiCode.OK, '转录成功', { transcript: result.transcript }));
+      return reply.send(
+        response(ApiCode.OK, '转录成功', {
+          transcript: result.transcript,
+          words: result.words,
+        }),
+      );
     },
 
     async matchWord(request: FastifyRequest, reply: FastifyReply) {
@@ -65,6 +70,7 @@ export function createSpeakingController(service: SpeakingService) {
             word: result.word,
             transcript: result.transcript,
             similarity: result.similarity,
+            words: result.words,
           },
         ),
       );
