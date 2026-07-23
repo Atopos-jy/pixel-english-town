@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { DEFAULT_BADGES, type BadgeDefinition, type BadgeRuleMetric } from '@/lib/badges';
 
 type BadgeRow = BadgeDefinition & { earnedUserCount: number };
-type ApiResult = { success: boolean; message: string; data: BadgeRow[] | null };
+type ApiResult = { code: number; message: string; data: BadgeRow[] | null };
 const metrics: Array<{ value: BadgeRuleMetric; label: string }> = [
   { value: 'totalArticlesCompleted', label: '完成文章数' },
   { value: 'currentStreak', label: '连续打卡天数' },
@@ -21,7 +21,7 @@ export default function BadgeManager() {
   const [filter, setFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
   const [message, setMessage] = useState('');
   useEffect(() => {
-    fetch('/api/admin/badges')
+    fetch('/api/v1/admin/badges')
       .then(async (r) => {
         const d = (await r.json()) as ApiResult;
         if (r.ok && d.data) {

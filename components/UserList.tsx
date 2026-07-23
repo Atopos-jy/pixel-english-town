@@ -24,14 +24,14 @@ export default function UserList() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users');
-      
+      const response = await fetch('/api/v1/admin/users');
+
       if (!response.ok) {
         throw new Error('获取用户列表失败');
       }
 
-      const data = await response.json();
-      setUsers(data);
+      const data = (await response.json()) as { data: UserData[] | null };
+      setUsers(data.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : '未知错误');
     } finally {
@@ -46,13 +46,13 @@ export default function UserList() {
 
     setDeleteId(id);
     try {
-      const response = await fetch(`/api/admin/users/${id}`, {
+      const response = await fetch(`/api/v1/admin/users/${id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || '删除用户失败');
+        throw new Error(data.message || '删除用户失败');
       }
 
       // 刷新列表
@@ -66,7 +66,7 @@ export default function UserList() {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
+      const response = await fetch(`/api/v1/admin/users/${userId}/role`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export default function UserList() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || '更新角色失败');
+        throw new Error(data.message || '更新角色失败');
       }
 
       // 刷新列表
@@ -122,9 +122,7 @@ export default function UserList() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   用户信息
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  角色
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   注册日期
                 </th>
@@ -138,12 +136,8 @@ export default function UserList() {
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {user.name || '未设置'}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {user.email}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{user.name || '未设置'}</div>
+                      <div className="text-sm text-gray-500">{user.email}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -160,9 +154,7 @@ export default function UserList() {
                       <option value="admin">Admin</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(user.createdAt)}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.createdAt)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Link
                       href={`/admin/users/${user.id}`}

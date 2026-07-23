@@ -15,9 +15,9 @@ interface Article {
 
 // 难度中英文映射
 const DIFFICULTY_MAP: Record<string, string> = {
-  'Beginner': '初级',
-  'Intermediate': '中级',
-  'Advanced': '高级',
+  Beginner: '初级',
+  Intermediate: '中级',
+  Advanced: '高级',
 };
 
 export default function ArticleList() {
@@ -32,14 +32,14 @@ export default function ArticleList() {
 
   const fetchArticles = async () => {
     try {
-      const response = await fetch('/api/admin/articles');
-      
+      const response = await fetch('/api/v1/admin/articles');
+
       if (!response.ok) {
         throw new Error('获取文章列表失败');
       }
 
-      const data = await response.json();
-      setArticles(data);
+      const data = (await response.json()) as { data: Article[] | null };
+      setArticles(data.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : '未知错误');
     } finally {
@@ -54,7 +54,7 @@ export default function ArticleList() {
 
     setDeleteId(id);
     try {
-      const response = await fetch(`/api/admin/articles/${id}`, {
+      const response = await fetch(`/api/v1/admin/articles/${id}`, {
         method: 'DELETE',
       });
 
@@ -122,15 +122,9 @@ export default function ArticleList() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  标题
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  日期
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  难度
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标题</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">难度</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
@@ -141,19 +135,15 @@ export default function ArticleList() {
                 <tr key={article.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {article.titleZh}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {article.titleEn}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{article.titleZh}</div>
+                      <div className="text-sm text-gray-500">{article.titleEn}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {article.date}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{article.date}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getDifficultyColor(article.difficulty)}`}>
+                    <span
+                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getDifficultyColor(article.difficulty)}`}
+                    >
                       {DIFFICULTY_MAP[article.difficulty] || article.difficulty}
                     </span>
                   </td>

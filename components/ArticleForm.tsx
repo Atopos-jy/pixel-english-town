@@ -56,54 +56,53 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
   });
 
   // ByteMD插件配置 - 只使用GFM插件
-  const plugins = [
-    gfm(),
-  ];
+  const plugins = [gfm()];
 
   // 移除Markdown语法符号，只保留纯文本用于计算单词数
   const stripMarkdown = (text: string): string => {
-    return text
-      // 移除标题标记 (# ## ###)
-      .replace(/^#{1,6}\s+/gm, '')
-      // 移除粗体 (**text** 或 __text__)
-      .replace(/(\*\*|__)(.*?)\1/g, '$2')
-      // 移除斜体 (*text* 或 _text_)
-      .replace(/(\*|_)(.*?)\1/g, '$2')
-      // 移除删除线 (~~text~~)
-      .replace(/~~(.*?)~~/g, '$1')
-      // 移除链接 [text](url)
-      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-      // 移除图片 ![alt](url)
-      .replace(/!\[([^\]]*)\]\([^\)]+\)/g, '$1')
-      // 移除行内代码 `code`
-      .replace(/`([^`]+)`/g, '$1')
-      // 移除代码块标记
-      .replace(/```[\s\S]*?```/g, '')
-      // 移除引用标记 (>)
-      .replace(/^>\s+/gm, '')
-      // 移除列表标记 (- * +)
-      .replace(/^[\*\-\+]\s+/gm, '')
-      // 移除有序列表标记 (1. 2. 3.)
-      .replace(/^\d+\.\s+/gm, '')
-      // 移除HTML标签
-      .replace(/<[^>]+>/g, '')
-      // 移除多余空格
-      .replace(/\s+/g, ' ')
-      .trim();
+    return (
+      text
+        // 移除标题标记 (# ## ###)
+        .replace(/^#{1,6}\s+/gm, '')
+        // 移除粗体 (**text** 或 __text__)
+        .replace(/(\*\*|__)(.*?)\1/g, '$2')
+        // 移除斜体 (*text* 或 _text_)
+        .replace(/(\*|_)(.*?)\1/g, '$2')
+        // 移除删除线 (~~text~~)
+        .replace(/~~(.*?)~~/g, '$1')
+        // 移除链接 [text](url)
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+        // 移除图片 ![alt](url)
+        .replace(/!\[([^\]]*)\]\([^\)]+\)/g, '$1')
+        // 移除行内代码 `code`
+        .replace(/`([^`]+)`/g, '$1')
+        // 移除代码块标记
+        .replace(/```[\s\S]*?```/g, '')
+        // 移除引用标记 (>)
+        .replace(/^>\s+/gm, '')
+        // 移除列表标记 (- * +)
+        .replace(/^[\*\-\+]\s+/gm, '')
+        // 移除有序列表标记 (1. 2. 3.)
+        .replace(/^\d+\.\s+/gm, '')
+        // 移除HTML标签
+        .replace(/<[^>]+>/g, '')
+        // 移除多余空格
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
   };
 
   // 计算阅读时长（基于英文内容，慢速阅读：50词/分钟）
   const calculateDuration = (titleEn: string, summaryEn: string, content: ContentBlock[]) => {
     // 统计所有英文文本的单词数
-    const allEnglishText = [
-      titleEn,
-      summaryEn,
-      ...content.map(block => block.en)
-    ].join(' ');
+    const allEnglishText = [titleEn, summaryEn, ...content.map((block) => block.en)].join(' ');
 
     // 移除Markdown符号后再计算单词数
     const plainText = stripMarkdown(allEnglishText);
-    const wordCount = plainText.trim().split(/\s+/).filter(word => word.length > 0).length;
+    const wordCount = plainText
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
 
     // 按照50词/分钟计算，转换为秒
     const durationMinutes = wordCount / 50;
@@ -118,28 +117,30 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
     if (formData.audioUrl) {
       return;
     }
-    
+
     const duration = calculateDuration(formData.titleEn, formData.summaryEn, formData.content);
     if (duration !== formData.durationSeconds) {
-      setFormData(prev => ({ ...prev, durationSeconds: duration }));
+      setFormData((prev) => ({ ...prev, durationSeconds: duration }));
     }
-  }, [formData.titleEn, formData.summaryEn, formData.content, formData.audioUrl]);
+  }, [formData.titleEn, formData.summaryEn, formData.content, formData.audioUrl]); // eslint-disable-line react-hooks/exhaustive-deps -- 保持既有的表单联动时机，避免改动历史组件行为。
 
   useEffect(() => {
     if (mode === 'edit' && articleId) {
       fetchArticle();
     }
-  }, [mode, articleId]);
+  }, [mode, articleId]); // eslint-disable-line react-hooks/exhaustive-deps -- 保持既有的编辑态加载时机，避免改动历史组件行为。
 
   const fetchArticle = async () => {
     try {
-      const response = await fetch(`/api/admin/articles/${articleId}`);
-      
+      const response = await fetch(`/api/v1/admin/articles/${articleId}`);
+
       if (!response.ok) {
         throw new Error('获取文章失败');
       }
 
-      const data = await response.json();
+      const result = (await response.json()) as { data: ArticleFormData | null };
+      const data = result.data;
+      if (!data) throw new Error('获取文章失败');
       setFormData({
         id: data.id,
         date: data.date,
@@ -168,7 +169,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
         throw new Error('请填写所有必需字段');
       }
 
-      if (formData.content.some(block => !block.en || !block.zh)) {
+      if (formData.content.some((block) => !block.en || !block.zh)) {
         throw new Error('所有内容块必须包含英文和中文');
       }
 
@@ -178,10 +179,8 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
         throw new Error('请添加英文内容以计算阅读时长');
       }
 
-      const url = mode === 'create' 
-        ? '/api/admin/articles'
-        : `/api/admin/articles/${articleId}`;
-      
+      const url = mode === 'create' ? '/api/v1/admin/articles' : `/api/v1/admin/articles/${articleId}`;
+
       const method = mode === 'create' ? 'POST' : 'PUT';
 
       const response = await fetch(url, {
@@ -194,7 +193,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || '操作失败');
+        throw new Error(data.message || '操作失败');
       }
 
       router.push('/admin/articles');
@@ -245,9 +244,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        {mode === 'create' ? '创建新文章' : '编辑文章'}
-      </h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">{mode === 'create' ? '创建新文章' : '编辑文章'}</h1>
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -258,9 +255,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              日期 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">日期 *</label>
             <input
               type="date"
               value={formData.date}
@@ -271,9 +266,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              难度 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">难度 *</label>
             <select
               value={formData.difficulty}
               onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
@@ -288,13 +281,12 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            音频文件（可选）
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">音频文件（可选）</label>
           <OssUploader
             value={formData.audioUrl || ''}
             onChange={(url) => setFormData({ ...formData, audioUrl: url })}
             onDurationChange={(duration) => {
+              // eslint-disable-next-line no-console -- 保留既有调试输出，避免改变历史音频上传行为。
               console.log('接收到音频时长:', duration, '秒');
               setFormData({ ...formData, durationSeconds: duration });
             }}
@@ -317,8 +309,8 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
                 {transcribing ? (
                   <>
                     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                     </svg>
                     Whisper 识别中...
                   </>
@@ -337,9 +329,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              中文标题 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">中文标题 *</label>
             <input
               type="text"
               value={formData.titleZh}
@@ -351,9 +341,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              英文标题 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">英文标题 *</label>
             <input
               type="text"
               value={formData.titleEn}
@@ -367,9 +355,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              中文摘要 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">中文摘要 *</label>
             <textarea
               value={formData.summaryZh}
               onChange={(e) => setFormData({ ...formData, summaryZh: e.target.value })}
@@ -381,9 +367,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              英文摘要 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">英文摘要 *</label>
             <textarea
               value={formData.summaryEn}
               onChange={(e) => setFormData({ ...formData, summaryEn: e.target.value })}
@@ -397,9 +381,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
 
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              内容块 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">内容块 *</label>
             <button
               type="button"
               onClick={addContentBlock}
@@ -412,9 +394,7 @@ export default function ArticleForm({ mode, articleId }: ArticleFormProps) {
           {formData.content.map((block, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-medium text-gray-700">
-                  内容块 {index + 1}
-                </span>
+                <span className="text-sm font-medium text-gray-700">内容块 {index + 1}</span>
                 {formData.content.length > 1 && (
                   <button
                     type="button"

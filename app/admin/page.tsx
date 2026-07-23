@@ -23,14 +23,14 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/stats');
-      
+      const response = await fetch('/api/v1/admin/stats');
+
       if (!response.ok) {
         throw new Error('获取统计数据失败');
       }
 
-      const data = await response.json();
-      setStats(data);
+      const data = (await response.json()) as { data: AdminStats | null };
+      setStats(data.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : '未知错误');
     } finally {
@@ -60,9 +60,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">总用户数</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">
-                {stats?.totalUsers || 0}
-              </p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{stats?.totalUsers || 0}</p>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <Users className="w-6 h-6 text-blue-600" />
@@ -74,9 +72,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">总文章数</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">
-                {stats?.totalArticles || 0}
-              </p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{stats?.totalArticles || 0}</p>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
               <FileText className="w-6 h-6 text-green-600" />
@@ -88,9 +84,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">管理员数量</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">
-                {stats?.totalAdmins || 0}
-              </p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{stats?.totalAdmins || 0}</p>
             </div>
             <div className="bg-purple-100 p-3 rounded-full">
               <Shield className="w-6 h-6 text-purple-600" />
@@ -102,9 +96,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">最近7天新用户</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">
-                {stats?.recentUsers || 0}
-              </p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{stats?.recentUsers || 0}</p>
             </div>
             <div className="bg-orange-100 p-3 rounded-full">
               <TrendingUp className="w-6 h-6 text-orange-600" />
@@ -115,36 +107,26 @@ export default function AdminDashboard() {
 
       {/* 快速访问链接 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link
-          href="/admin/articles"
-          className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
-        >
+        <Link href="/admin/articles" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center">
             <div className="bg-blue-100 p-3 rounded-full mr-4">
               <FileText className="w-6 h-6 text-blue-600" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-800">文章管理</h3>
-              <p className="text-gray-500 text-sm mt-1">
-                创建、编辑和删除文章
-              </p>
+              <p className="text-gray-500 text-sm mt-1">创建、编辑和删除文章</p>
             </div>
           </div>
         </Link>
 
-        <Link
-          href="/admin/users"
-          className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
-        >
+        <Link href="/admin/users" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center">
             <div className="bg-green-100 p-3 rounded-full mr-4">
               <Users className="w-6 h-6 text-green-600" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-800">用户管理</h3>
-              <p className="text-gray-500 text-sm mt-1">
-                查看和管理用户账户
-              </p>
+              <p className="text-gray-500 text-sm mt-1">查看和管理用户账户</p>
             </div>
           </div>
         </Link>

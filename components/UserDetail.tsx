@@ -37,18 +37,18 @@ export default function UserDetail({ userId }: UserDetailProps) {
 
   useEffect(() => {
     fetchUser();
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps -- 保持既有详情加载时机，避免改动历史组件行为。
 
   const fetchUser = async () => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}`);
-      
+      const response = await fetch(`/api/v1/admin/users/${userId}`);
+
       if (!response.ok) {
         throw new Error('获取用户详情失败');
       }
 
-      const data = await response.json();
-      setUser(data);
+      const data = (await response.json()) as { data: UserDetailData | null };
+      setUser(data.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : '未知错误');
     } finally {
@@ -62,13 +62,13 @@ export default function UserDetail({ userId }: UserDetailProps) {
     }
 
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/v1/admin/users/${userId}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || '删除用户失败');
+        throw new Error(data.message || '删除用户失败');
       }
 
       router.push('/admin/users');
@@ -79,7 +79,7 @@ export default function UserDetail({ userId }: UserDetailProps) {
 
   const handleRoleChange = async (newRole: string) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
+      const response = await fetch(`/api/v1/admin/users/${userId}/role`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export default function UserDetail({ userId }: UserDetailProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || '更新角色失败');
+        throw new Error(data.message || '更新角色失败');
       }
 
       // 刷新用户数据
@@ -125,10 +125,7 @@ export default function UserDetail({ userId }: UserDetailProps) {
 
   return (
     <div>
-      <button
-        onClick={() => router.back()}
-        className="flex items-center text-gray-600 hover:text-gray-800 mb-6"
-      >
+      <button onClick={() => router.back()} className="flex items-center text-gray-600 hover:text-gray-800 mb-6">
         <ArrowLeft className="w-5 h-5 mr-2" />
         返回
       </button>
@@ -138,7 +135,7 @@ export default function UserDetail({ userId }: UserDetailProps) {
       {/* 基本信息 */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">基本信息</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex items-start">
             <Mail className="w-5 h-5 text-gray-400 mr-3 mt-1" />
@@ -189,27 +186,21 @@ export default function UserDetail({ userId }: UserDetailProps) {
       {user.progress && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">学习统计</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="bg-blue-50 rounded-lg p-4">
               <p className="text-sm text-blue-600 mb-1">完成文章数</p>
-              <p className="text-3xl font-bold text-blue-700">
-                {user.progress.totalArticlesCompleted}
-              </p>
+              <p className="text-3xl font-bold text-blue-700">{user.progress.totalArticlesCompleted}</p>
             </div>
 
             <div className="bg-green-50 rounded-lg p-4">
               <p className="text-sm text-green-600 mb-1">当前连续天数</p>
-              <p className="text-3xl font-bold text-green-700">
-                {user.progress.currentStreak}
-              </p>
+              <p className="text-3xl font-bold text-green-700">{user.progress.currentStreak}</p>
             </div>
 
             <div className="bg-purple-50 rounded-lg p-4">
               <p className="text-sm text-purple-600 mb-1">最长连续天数</p>
-              <p className="text-3xl font-bold text-purple-700">
-                {user.progress.longestStreak}
-              </p>
+              <p className="text-3xl font-bold text-purple-700">{user.progress.longestStreak}</p>
             </div>
           </div>
 
@@ -218,21 +209,15 @@ export default function UserDetail({ userId }: UserDetailProps) {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-xs text-gray-500">初级</p>
-                <p className="text-lg font-semibold text-gray-800">
-                  {user.progress.beginnerCount}
-                </p>
+                <p className="text-lg font-semibold text-gray-800">{user.progress.beginnerCount}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">中级</p>
-                <p className="text-lg font-semibold text-gray-800">
-                  {user.progress.intermediateCount}
-                </p>
+                <p className="text-lg font-semibold text-gray-800">{user.progress.intermediateCount}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">高级</p>
-                <p className="text-lg font-semibold text-gray-800">
-                  {user.progress.advancedCount}
-                </p>
+                <p className="text-lg font-semibold text-gray-800">{user.progress.advancedCount}</p>
               </div>
             </div>
           </div>

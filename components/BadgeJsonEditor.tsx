@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { DEFAULT_BADGES, parseBadgeDefinitions } from '@/lib/badges';
 
-type ApiResult = { success: boolean; message: string; data: unknown[] | null };
+type ApiResult = { code: number; message: string; data: unknown[] | null };
 
 const initialBadge = {
   ...DEFAULT_BADGES[0],
@@ -38,20 +38,20 @@ export default function BadgeJsonEditor() {
     }
     setSaving(true);
     try {
-      const currentResponse = await fetch('/api/admin/badges');
+      const currentResponse = await fetch('/api/v1/admin/badges');
       const current = (await currentResponse.json()) as ApiResult;
-      if (!currentResponse.ok || !current.success || !current.data) {
+      if (!currentResponse.ok || current.code !== 0 || !current.data) {
         setMessage(current.message);
         return;
       }
       const allBadges = [...current.data, parsed[0]];
-      const response = await fetch('/api/admin/badges', {
+      const response = await fetch('/api/v1/admin/badges', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ badges: allBadges }),
       });
       const result = (await response.json()) as ApiResult;
-      if (!response.ok || !result.success) {
+      if (!response.ok || result.code !== 0) {
         setMessage(result.message);
         return;
       }
