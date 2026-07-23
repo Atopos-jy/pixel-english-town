@@ -1,14 +1,17 @@
 import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Redis from 'ioredis';
 import { PrismaClient } from '@prisma/client';
 import { jwtVerify } from 'jose';
 import { Server } from 'socket.io';
 
 // 兼容 Node < 22：手动加载 .env 文件（Node 22+ 才有 loadEnvFile）
+// 从脚本路径反推仓库根目录，不依赖 process.cwd()
 function loadEnv() {
-  const envPath = join(process.cwd(), '.env');
+  const scriptDir = dirname(fileURLToPath(import.meta.url));
+  const envPath = join(scriptDir, '..', '..', '..', '.env');
   if (!existsSync(envPath)) {
     console.warn('[socket] .env 文件不存在，仅使用系统环境变量');
     return;
