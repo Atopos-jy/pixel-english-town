@@ -20,8 +20,8 @@ body {
 }
 
 .home-page__copy {
-  bottom: max(25%, 15rem);
-  left: max(5%, 3rem);
+  bottom: max(18%, 9rem);
+  left: max(8%, 3rem);
   width: min(30rem, 32vw);
 }
 
@@ -30,7 +30,7 @@ body {
 }
 
 .home-page__enter-button {
-  bottom: max(12%, 6.5rem);
+  bottom: max(6%, 2rem);
   width: clamp(15rem, 30vw, 31.5rem);
 }
 
@@ -40,13 +40,13 @@ body {
   }
 
   .home-page__copy {
-    bottom: max(25%, 13.5rem);
-    left: 5%;
+    bottom: max(18%, 7.5rem);
+    left: 8%;
     width: min(90%, 28rem);
   }
 
   .home-page__enter-button {
-    bottom: max(12%, 6.75rem);
+    bottom: max(6%, 2.25rem);
     width: min(68%, 22rem);
   }
 }

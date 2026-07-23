@@ -78,7 +78,7 @@ export default function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="min-h-[72vh] w-full border-t-4 border-[#55320f] bg-[#f6dfaa] px-5 py-8 text-slate-900 shadow-[0_-6px_0_rgba(85,50,15,.25)] md:px-10 md:py-12">
+          <div className="min-h-[72vh] w-full border-t-4 border-[#55320f] bg-[#f6dfaa] px-5 pt-16 pb-8 text-slate-900 shadow-[0_-6px_0_rgba(85,50,15,.25)] md:px-10 md:pt-20 md:pb-12">
             <div className="mx-auto w-full max-w-md animate-fade-in-up">
               <button
                 onClick={() => setShowAuth(false)}
@@ -92,15 +92,16 @@ export default function HomePage() {
         )}
       </section>
       {!showAuth && (
-        <button
-          onClick={() => (isReturningUser ? router.push('/town') : setShowAuth(true))}
-          className="home-page__enter-button absolute left-1/2 z-20 -translate-x-1/2 transition duration-150 hover:-translate-y-1 hover:drop-shadow-[0_0_18px_rgba(255,224,111,.95)] focus:outline-none focus:ring-4 focus:ring-amber-200"
-          aria-label="点击进入小镇"
-        >
-          {/* 像素按钮使用原始 PNG 尺寸与硬边渲染，不交给图片优化器重采样。 */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/home/enter-town-button.png" alt="点击进入小镇" className="h-auto w-full" />
-        </button>
+        <div className="home-page__enter-button absolute left-1/2 z-20 -translate-x-1/2 ml-[60px]">
+          <button
+            onClick={() => (isReturningUser ? router.push('/town') : setShowAuth(true))}
+            className="block w-full transition duration-150 hover:-translate-y-1 hover:drop-shadow-[0_0_18px_rgba(255,224,111,.95)] focus:outline-none focus:ring-4 focus:ring-amber-200"
+            aria-label="点击进入小镇"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/home/enter-town-button.png" alt="点击进入小镇" className="h-auto w-full" />
+          </button>
+        </div>
       )}
     </main>
   );
