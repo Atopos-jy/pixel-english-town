@@ -1,9 +1,12 @@
 import type { PrismaClient, QuizGenerationJob } from '@prisma/client';
+import type Redis from 'ioredis';
 import type { ApiEnv } from '../../config/env.js';
 import { decryptApiKey } from './encryption.js';
 import { generateQuiz } from './provider.js';
 
 const MAX_ARTICLE_CHARACTERS = 40_000;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+const RATE_LIMIT_MAX_REQUESTS = 3;
 const runningJobs = new Set<string>();
 
 export type QuizJobResponse = {
@@ -37,7 +40,15 @@ function toJobResponse(
   };
 }
 
-export function createQuizService(prisma: PrismaClient, env: ApiEnv) {
+export function createQuizService(prisma: PrismaClient, env: ApiEnv, redis?: Redis) {
+  const checkRateLimit = async (userId: string): Promise<number | null> => {
+    if (!redis) return null;
+    const key = `rate-limit:quiz-generate:${userId}`;
+    const count = await redis.incr(key);
+    if (count === 1) await redis.expire(key, RATE_LIMIT_WINDOW_SECONDS);
+    if (count <= RATE_LIMIT_MAX_REQUESTS) return null;
+    return Math.max(await redis.ttl(key), 1);
+  };
   const start = (jobId: string): void => {
     if (runningJobs.has(jobId)) return;
     runningJobs.add(jobId);
@@ -107,6 +118,7 @@ export function createQuizService(prisma: PrismaClient, env: ApiEnv) {
   };
 
   return {
+    checkRateLimit,
     async create(userId: string, articleId: string) {
       const article = await prisma.article.findUnique({ where: { id: articleId }, select: { id: true } });
       if (!article) return { kind: 'notFound' as const };
