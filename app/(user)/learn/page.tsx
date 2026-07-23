@@ -73,17 +73,19 @@ export default function LearnPage() {
 
     const checkJob = async () => {
       try {
-        const response = await fetch(`/api/quiz/generate/${quizGenerationJob.id}`);
+        const response = await fetch(`/api/v1/quiz/generate/${quizGenerationJob.id}`);
         const data = await response.json();
         if (!response.ok || stopped) return;
-        if (data.job.status === 'completed') {
+        const job = data.data?.job;
+        if (!job) return;
+        if (job.status === 'completed') {
           setQuizGenerationJob(null);
           if (!isQuizOpen) setNotice('AI 题目已生成完成，可以开始测验。');
           return;
         }
-        if (data.job.status === 'failed') {
+        if (job.status === 'failed') {
           setQuizGenerationJob(null);
-          setNotice(`AI 出题失败：${data.job.error || '请稍后重试。'}`);
+          setNotice(`AI 出题失败：${job.error || '请稍后重试。'}`);
           return;
         }
       } catch {

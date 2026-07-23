@@ -7,6 +7,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32),
+  AI_SETTINGS_ENCRYPTION_KEY: z.string().min(1),
 });
 
 export type ApiEnv = z.infer<typeof envSchema>;

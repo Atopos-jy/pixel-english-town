@@ -54,20 +54,22 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
 
     const checkJob = async () => {
       try {
-        const response = await fetch(`/api/quiz/generate/${generationJobId}`);
+        const response = await fetch(`/api/v1/quiz/generate/${generationJobId}`);
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || '无法查询出题进度。');
+        if (!response.ok) throw new Error(data.message || '无法查询出题进度。');
         if (stopped) return;
+        const job = data.data?.job;
+        if (!job) throw new Error('无法查询出题进度。');
 
-        if (data.job.status === 'completed') {
-          setQuestions(data.job.questions || []);
+        if (job.status === 'completed') {
+          setQuestions(job.questions || []);
           setGenerationJobId(null);
           onGenerationJobChange?.(null);
           setPhase('answering');
           return;
         }
-        if (data.job.status === 'failed') {
-          setError(data.job.error || '出题失败。');
+        if (job.status === 'failed') {
+          setError(job.error || '出题失败。');
           setGenerationJobId(null);
           onGenerationJobChange?.(null);
           setPhase('idle');
@@ -104,15 +106,17 @@ export const ArticleQuiz: React.FC<ArticleQuizProps> = ({
     setBookmarkedQuestionIds(new Set());
 
     try {
-      const res = await fetch('/api/quiz/generate', {
+      const res = await fetch('/api/v1/quiz/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ articleId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '生成失败');
-      setGenerationJobId(data.job.id);
-      onGenerationJobChange?.(data.job.id);
+      if (!res.ok) throw new Error(data.message || '生成失败');
+      const job = data.data?.job;
+      if (!job) throw new Error('生成失败');
+      setGenerationJobId(job.id);
+      onGenerationJobChange?.(job.id);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : '生成失败');
       setPhase('idle');
