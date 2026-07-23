@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import type { PlazaActivity, PlazaRealtimeEvent, PlazaSnapshot } from '@/types/plaza';
 
 type PlazaSnapshotResponse = {
-  success: boolean;
+  code: number;
   message: string;
   data: PlazaSnapshot | null;
 };
@@ -47,7 +47,7 @@ export function PlazaProvider({ children }: { children: React.ReactNode }) {
 
     const loadSnapshot = async () => {
       try {
-        const response = await fetch('/api/plaza/snapshot');
+        const response = await fetch('/api/v1/plaza/snapshot');
         const text = await response.text();
 
         if (!response.ok || !text) {
@@ -56,7 +56,7 @@ export function PlazaProvider({ children }: { children: React.ReactNode }) {
         }
 
         const result = JSON.parse(text) as PlazaSnapshotResponse;
-        if (result.success && result.data) {
+        if (result.code === 0 && result.data) {
           setState(result.data);
         }
       } catch (error: unknown) {

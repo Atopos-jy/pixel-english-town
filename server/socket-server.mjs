@@ -2,7 +2,8 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import Redis from 'ioredis';
-import { getToken } from 'next-auth/jwt';
+import { PrismaClient } from '@prisma/client';
+import { jwtVerify } from 'jose';
 import { Server } from 'socket.io';
 
 // 兼容 Node < 22：手动加载 .env 文件（Node 22+ 才有 loadEnvFile）
@@ -34,6 +35,8 @@ loadEnv();
 
 const port = Number(process.env.SOCKET_IO_PORT || 3001);
 const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const prisma = new PrismaClient();
+const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET || '');
 const allowedOrigins = (process.env.SOCKET_CORS_ORIGINS || 'http://localhost:3000')
   .split(',')
   .map((origin) => origin.trim())
@@ -163,14 +166,12 @@ async function removePresence(member) {
 }
 
 function getInternalSecret() {
-  if (process.env.PLAZA_INTERNAL_SECRET) return process.env.PLAZA_INTERNAL_SECRET;
-  if (process.env.NODE_ENV !== 'production') return process.env.NEXTAUTH_SECRET;
-  return undefined;
+  return process.env.PLAZA_INTERNAL_SECRET;
 }
 
 async function notifyEnterPlaza(userId) {
   const internalSecret = getInternalSecret();
-  const nextAppUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const apiOrigin = process.env.API_ORIGIN || 'http://localhost:4000';
 
   if (!internalSecret) {
     console.error('[socket] 缺少 PLAZA_INTERNAL_SECRET，无法创建进入广场动态');
@@ -178,7 +179,7 @@ async function notifyEnterPlaza(userId) {
   }
 
   try {
-    const response = await fetch(new URL('/api/internal/plaza/enter', nextAppUrl), {
+    const response = await fetch(new URL('/api/v1/internal/plaza/enter', apiOrigin), {
       method: 'POST',
       headers: {
         authorization: `Bearer ${internalSecret}`,
@@ -203,27 +204,16 @@ async function notifyEnterPlaza(userId) {
 // ---- 认证中间件 ----
 io.use(async (socket, next) => {
   try {
-    const request = {
-      headers: socket.request.headers,
-      cookies: parseCookieHeader(socket.request.headers.cookie),
-    };
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-      cookieName: 'next-auth.session-token',
-      secureCookie: false,
+    const token = parseCookieHeader(socket.request.headers.cookie)['pixel-town.token'];
+    if (!token || !process.env.JWT_SECRET) return next(new Error('Not authenticated'));
+    const { payload } = await jwtVerify(token, jwtSecret);
+    if (typeof payload.sub !== 'string' || typeof payload.sid !== 'string') return next(new Error('Invalid session'));
+    const session = await prisma.userSession.findFirst({
+      where: { id: payload.sid, userId: payload.sub, revokedAt: null, expiresAt: { gt: new Date() } },
+      select: { userId: true },
     });
-
-    if (typeof token?.id !== 'string') {
-      console.warn('[socket] 未解析到有效登录会话', {
-        hasCookieHeader: Boolean(socket.request.headers.cookie),
-        hasNextAuthSecret: Boolean(process.env.NEXTAUTH_SECRET),
-        tokenFields: token ? Object.keys(token) : [],
-      });
-      return next(new Error('未登录'));
-    }
-
-    socket.data.userId = token.id;
+    if (!session) return next(new Error('Session expired'));
+    socket.data.userId = session.userId;
     next();
   } catch (error) {
     console.error('[socket] 握手认证失败', error);
