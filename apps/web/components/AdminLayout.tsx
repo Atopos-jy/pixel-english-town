@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { LayoutDashboard, FileText, Users, Award, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Award, LogOut, Home } from 'lucide-react';
 import '@/app/admin/admin.css';
 
 interface AdminLayoutProps {
@@ -90,9 +90,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             徽章管理
           </Link>
 
+          <div className="border-t border-gray-200 mt-4 pt-4">
+            <Link
+              href="/town"
+              className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 hover:text-emerald-600 transition-colors"
+            >
+              <Home className="w-5 h-5 mr-3" />
+              进入前台
+            </Link>
+          </div>
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 hover:text-red-600 transition-colors mt-4"
+            className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 hover:text-red-600 transition-colors"
           >
             <LogOut className="w-5 h-5 mr-3" />
             退出登录
