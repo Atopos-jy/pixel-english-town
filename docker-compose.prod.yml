@@ -1,0 +1,73 @@
+# 生产环境部署 —— MySQL/Redis 使用已有容器，仅部署应用层
+#
+# 使用方式（在远程服务器上）：
+#   1. 确认 MySQL 和 Redis 容器在运行
+#   2. 确认它们都在 docker 网络 "pixel-net" 中（docker network create pixel-net）
+#   3. 创建 .env.production 配置生产环境变量
+#   4. docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+#
+# 如果 MySQL/Redis 不在 Docker 里（裸机安装），把下方 network 相关配置删掉，
+# DATABASE_URL/REDIS_URL 直接用 IP:端口即可。
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      NODE_ENV: production
+      API_PORT: '4000'
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      AI_SETTINGS_ENCRYPTION_KEY: ${AI_SETTINGS_ENCRYPTION_KEY}
+      PLAZA_INTERNAL_SECRET: ${PLAZA_INTERNAL_SECRET}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY}
+      WEB_ORIGIN: ${WEB_ORIGIN}
+      OSS_SECRET_ID: ${OSS_SECRET_ID:-}
+      OSS_SECRET_KEY: ${OSS_SECRET_KEY:-}
+      OSS_BUCKET: ${OSS_BUCKET:-}
+      OSS_REGION: ${OSS_REGION:-}
+      OSS_PUBLIC_BASE_URL: ${OSS_PUBLIC_BASE_URL:-}
+    networks:
+      - pixel-net
+
+  socket:
+    build:
+      context: .
+      dockerfile: apps/socket/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      SOCKET_IO_PORT: '3001'
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      PLAZA_INTERNAL_SECRET: ${PLAZA_INTERNAL_SECRET}
+      API_ORIGIN: http://api:4000
+      SOCKET_CORS_ORIGINS: ${SOCKET_CORS_ORIGINS}
+    networks:
+      - pixel-net
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      API_ORIGIN: http://api:4000
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL}
+    networks:
+      - pixel-net
+
+networks:
+  pixel-net:
+    external: true
