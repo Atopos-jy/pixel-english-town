@@ -45,6 +45,10 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
   const audioChunksRef = React.useRef<Blob[]>([]);
   const recordingStreamRef = React.useRef<MediaStream | null>(null);
+  // 录音回放：存储最近一次录音的 blob URL 和 Deepgram 逐词时间戳
+  const [recordingPlaybackUrl, setRecordingPlaybackUrl] = useState<string | null>(null);
+  const [recordingTimestamps, setRecordingTimestamps] = useState<WordTimestamp[] | null>(null);
+  const recordingAudioRef = React.useRef<HTMLAudioElement | null>(null);
 
   // 用于存储段落元素的引用
   const paragraphRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
@@ -365,8 +369,16 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
         alert(`转录失败：${data.message || '未知错误'}`);
         return;
       }
-      const { data } = (await res.json()) as { data: { transcript: string } };
-      const { transcript } = data;
+      const { data } = (await res.json()) as {
+        data: { transcript: string; words?: Array<{ word: string; start: number; end: number }> };
+      };
+      const { transcript, words: evalWords } = data;
+
+      // 释放旧的录音回放 URL
+      if (recordingPlaybackUrl) URL.revokeObjectURL(recordingPlaybackUrl);
+      const playbackUrl = URL.createObjectURL(blob);
+      setRecordingPlaybackUrl(playbackUrl);
+      setRecordingTimestamps(evalWords ?? null);
 
       // 解析 sentKey → blockIdx / sentIdx
       const [blockIdxStr, sentIdxStr] = sentKey.split('-');
@@ -383,6 +395,9 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
       // 找到该句对应的所有 globalIdx（按顺序）
       const sentWords = (enrichedWordData ?? []).filter((w) => w.blockIdx === bIdx && w.sentIdx === sIdx);
 
+      // 存储 globalIdx 映射供回放时逐词高亮
+      recordingWordGlobalIdxRef.current = sentWords.map((w) => w.globalIdx);
+
       // 更新评测结果（Map 不可变更新）
       setEvalResultsByGlobalIdx((prev) => {
         const next = new Map(prev);
@@ -396,6 +411,34 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
       alert(`评测出错：${e instanceof Error ? e.message : '未知错误'}`);
     } finally {
       setProcessingKey(null);
+    }
+  };
+
+  // ───── 录音回放（逐词时间轴同步高亮） ─────
+
+  // recordingTimestamps[] 对齐的单词 globalIdx 映射（在 handleRecordingStop 中设置）
+  const recordingWordGlobalIdxRef = React.useRef<number[]>([]);
+  const [recordingPlaybackGlobalIdx, setRecordingPlaybackGlobalIdx] = useState<number | null>(null);
+
+  const handlePlayRecording = () => {
+    if (!recordingPlaybackUrl || !recordingTimestamps || recordingTimestamps.length === 0) return;
+    const audio = recordingAudioRef.current;
+    if (!audio) return;
+
+    setRecordingPlaybackGlobalIdx(null);
+    audio.currentTime = 0;
+    audio.play().catch(() => undefined);
+  };
+
+  const handleRecordingTimeUpdate = () => {
+    const audio = recordingAudioRef.current;
+    if (!audio || !recordingTimestamps || recordingTimestamps.length === 0) return;
+    const t = audio.currentTime;
+    const idx = recordingTimestamps.findIndex((w) => t >= w.start && t < w.end);
+    if (idx >= 0 && idx < recordingWordGlobalIdxRef.current.length) {
+      setRecordingPlaybackGlobalIdx(recordingWordGlobalIdxRef.current[idx]);
+    } else {
+      setRecordingPlaybackGlobalIdx(null);
     }
   };
 
@@ -635,10 +678,14 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
                           const isCurrent = activeWordIndex === globalIdx;
                           const hasBeenRead = globalIdx >= 0 && globalIdx <= maxReadWordIndexRef.current;
                           const evalStatus = evalResultsByGlobalIdx.get(globalIdx);
+                          const isRecordingActive =
+                            recordingPlaybackGlobalIdx !== null && recordingPlaybackGlobalIdx === globalIdx;
 
                           let color: string;
                           let textDecoration = 'none';
-                          if (evalStatus === 'correct') color = '#22c55e';
+                          if (isRecordingActive) {
+                            color = '#2563eb'; // 回放高亮：蓝色
+                          } else if (evalStatus === 'correct') color = '#22c55e';
                           else if (evalStatus === 'substituted') color = '#f59e0b';
                           else if (evalStatus === 'deleted') {
                             color = '#ef4444';
@@ -648,8 +695,15 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
                           return (
                             <span
                               key={ii}
-                              className="transition-all duration-300 ease-out"
-                              style={{ color, fontWeight: isCurrent ? 600 : undefined, textDecoration }}
+                              className="transition-all duration-150 ease-out"
+                              style={{
+                                color,
+                                fontWeight: isCurrent || isRecordingActive ? 600 : undefined,
+                                textDecoration,
+                                ...(isRecordingActive
+                                  ? { backgroundColor: '#dbeafe', borderRadius: 2, padding: '0 1px' }
+                                  : {}),
+                              }}
                             >
                               {item.token}
                             </span>
@@ -690,6 +744,21 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
                                 <Mic className="w-2.5 h-2.5" /> 跟读
                               </>
                             )}
+                          </button>
+                        )}
+
+                        {/* 录音回放按钮（有评测结果 + 录音可用时显示） */}
+                        {hasEval && recordingPlaybackUrl && recordingTimestamps && recordingTimestamps.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handlePlayRecording}
+                            title="播放录音并同步逐词高亮"
+                            className="inline-flex items-center gap-1 ml-0.5 border-2 border-emerald-700 bg-[#e2f3d0] px-2 py-0.5 text-xs font-medium text-emerald-900 hover:bg-[#cfeab5] transition cursor-pointer"
+                          >
+                            <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                            回放
                           </button>
                         )}
                       </span>
@@ -784,6 +853,16 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
             <p className="text-slate-500">文章学习已完成。</p>
           </div>
         </div>
+      )}
+      {/* 录音回放音频元素（隐藏，仅用于 timeupdate 逐词同步） */}
+      {recordingPlaybackUrl && (
+        <audio
+          ref={recordingAudioRef}
+          src={recordingPlaybackUrl}
+          onTimeUpdate={handleRecordingTimeUpdate}
+          onEnded={() => setRecordingPlaybackGlobalIdx(null)}
+          className="hidden"
+        />
       )}
     </div>
   );
