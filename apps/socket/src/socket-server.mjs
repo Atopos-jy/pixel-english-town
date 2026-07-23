@@ -12,11 +12,13 @@ import { Server } from 'socket.io';
 function loadEnv() {
   const scriptDir = dirname(fileURLToPath(import.meta.url));
   const envPath = join(scriptDir, '..', '..', '..', '.env');
+  console.warn('[socket] 尝试加载 .env:', envPath);
   if (!existsSync(envPath)) {
     console.warn('[socket] .env 文件不存在，仅使用系统环境变量');
     return;
   }
   const content = readFileSync(envPath, 'utf-8');
+  let loaded = 0;
   for (const line of content.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
@@ -24,13 +26,20 @@ function loadEnv() {
     if (eqIndex === -1) continue;
     const key = trimmed.slice(0, eqIndex).trim();
     let value = trimmed.slice(eqIndex + 1).trim();
-    // 去除引号
     if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
     if (!process.env[key]) {
       process.env[key] = value;
+      loaded++;
     }
+  }
+  console.warn(`[socket] .env 加载完毕: 成功加载 ${loaded} 个变量`);
+  if (!process.env.PLAZA_INTERNAL_SECRET) {
+    console.error('[socket] ⚠️  PLAZA_INTERNAL_SECRET 未配置，无法创建进入广场动态');
+    console.error('[socket]    请在仓库根目录 .env 中添加:');
+    console.error('[socket]    PLAZA_INTERNAL_SECRET="使用独立的高强度随机字符串"');
+    console.error('[socket]    然后重启 Socket.IO 服务');
   }
 }
 
