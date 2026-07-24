@@ -1,0 +1,104 @@
+services:
+  # ==================== 数据库与缓存 ====================
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-pixel_town}
+      MYSQL_USER: ${MYSQL_USER:-pixel_town}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-pixel_town_pass}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - '127.0.0.1:3306:3306'
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - '127.0.0.1:6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Fastify API ====================
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      NODE_ENV: production
+      API_PORT: '4000'
+      DATABASE_URL: mysql://${MYSQL_USER:-pixel_town}:${MYSQL_PASSWORD:-pixel_town_pass}@mysql:3306/${MYSQL_DATABASE:-pixel_town}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      AI_SETTINGS_ENCRYPTION_KEY: ${AI_SETTINGS_ENCRYPTION_KEY}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY}
+      PLAZA_INTERNAL_SECRET: ${PLAZA_INTERNAL_SECRET}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      OSS_SECRET_ID: ${OSS_SECRET_ID:-}
+      OSS_SECRET_KEY: ${OSS_SECRET_KEY:-}
+      OSS_BUCKET: ${OSS_BUCKET:-}
+      OSS_REGION: ${OSS_REGION:-}
+      OSS_PUBLIC_BASE_URL: ${OSS_PUBLIC_BASE_URL:-}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ==================== Socket.IO 实时服务 ====================
+  socket:
+    build:
+      context: .
+      dockerfile: apps/socket/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      SOCKET_IO_PORT: '3001'
+      DATABASE_URL: mysql://${MYSQL_USER:-pixel_town}:${MYSQL_PASSWORD:-pixel_town_pass}@mysql:3306/${MYSQL_DATABASE:-pixel_town}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      PLAZA_INTERNAL_SECRET: ${PLAZA_INTERNAL_SECRET}
+      API_ORIGIN: http://api:4000
+      SOCKET_CORS_ORIGINS: ${SOCKET_CORS_ORIGINS:-http://localhost:3000}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ==================== Next.js 前端 ====================
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      API_ORIGIN: http://api:4000
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
+    depends_on:
+      - api
+      - socket
+
+volumes:
+  mysql_data:
+  redis_data:

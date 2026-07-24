@@ -1,136 +1,120 @@
 # 像素英语小镇 (Pixel English Town)
 
-像素风格的英语学习平台 — 阅读、练习、收集徽章，在小镇里开始今天的英语冒险。
+像素风格的英语学习平台——阅读、练习、收集徽章，在小镇里开始今天的英语冒险。
 
 ## 页面预览
 
-### 登录页
-
 ![登录页](docs/assets/images/index.png)
-
-### 小镇与学习广场
-
 ![小镇总览](docs/assets/images/overview.png)
-
 ![学习广场](docs/assets/images/plaza.png)
-
-### 学习与个人中心
-
 ![阅读学习](docs/assets/images/read.png)
-
 ![练习测验](docs/assets/images/test.png)
-
 ![个人中心](docs/assets/images/my.png)
-
-### 实时功能与问题记录
-
-![Socket 实时功能](docs/assets/images/webSocket.png)
-
-![已知问题](docs/assets/images/problems.png)
 
 ## 技术栈
 
-- **前端**: Next.js 14 + React 18 + TypeScript + Tailwind CSS
-- **数据库**: MySQL（通过 Prisma ORM）
-- **实时通信**: Socket.IO + Redis
-- **认证**: NextAuth.js
-- **包管理**: pnpm
+| 层级 | 技术 |
+|------|------|
+| 前端 | Next.js 14 + React 18 + TypeScript + Tailwind CSS |
+| API | Fastify + Zod + Prisma |
+| 数据库 | MySQL (Prisma ORM) |
+| 缓存 | Redis |
+| 实时通信 | Socket.IO + Redis Pub/Sub |
+| 语音转写 | Deepgram (nova-2) |
+| 文件存储 | 阿里云 OSS |
+| 包管理 | pnpm workspace |
+
+## 项目结构
+
+```
+pixel-english-town/
+├── apps/
+│   ├── web/              # Next.js 前端
+│   │   ├── app/          # App Router 页面
+│   │   ├── components/   # React 组件
+│   │   ├── contexts/     # 状态上下文
+│   │   ├── lib/          # 工具库
+│   │   └── public/       # 静态资源
+│   ├── api/              # Fastify REST API
+│   │   └── src/modules/  # 领域模块（四层架构）
+│   └── socket/           # Socket.IO 实时服务
+│       └── src/
+├── packages/
+│   └── contracts/        # 前后端共享类型
+├── prisma/               # Schema + 数据库迁移
+├── docs/                 # 设计文档
+├── docker-compose.yml    # 本地开发环境
+├── docker-compose.prod.yml # 生产部署配置
+└── .env.example          # 环境变量模板
+```
 
 ## 本地运行
 
 ### 前置条件
 
-- **Node.js** >= 18
-- **pnpm** >= 10（安装：`npm install -g pnpm`）
-- **MySQL** 数据库（本地或远程）
-- **Redis**（广场实时功能需要）
+- Node.js >= 18
+- pnpm >= 10
+- MySQL（本地或通过 SSH 隧道连接远程）
+- Redis（广场实时功能需要）
 
-> 本地快速启动 Redis：
->
-> ```bash
-> docker run -d --name redis -p 6379:6379 redis:7-alpine
-> ```
-
-### 1. 克隆项目
-
-```bash
-git clone <repo-url>
-cd pixel-english-town
-```
-
-### 2. 安装依赖 & 生成 Prisma Client
+### 1. 安装 & 配置
 
 ```bash
 pnpm install
-```
-
-> `pnpm install` 完成后会自动执行 `prisma generate`，根据 `prisma/schema.prisma` 生成 Prisma Client 模型。
-> 如果因为某些原因自动生成失败，手动运行：
->
-> ```bash
-> pnpm db:generate
-> ```
-
-### 3. 配置环境变量
-
-复制环境变量模板并填写实际值：
-
-```bash
 cp .env.example .env
-```
-
-编辑 `.env`，至少需要填写：
-
-| 变量                     | 说明                                                    |
-| ------------------------ | ------------------------------------------------------- |
-| `DATABASE_URL`           | MySQL 连接字符串                                        |
-| `NEXTAUTH_SECRET`        | 随机密钥（用 `openssl rand -base64 32` 生成）           |
-| `NEXTAUTH_URL`           | 本地 Next.js 地址，默认 `http://localhost:3000`         |
-| `REDIS_URL`              | Redis 连接地址，默认 `redis://127.0.0.1:6379`           |
-| `NEXT_PUBLIC_SOCKET_URL` | 客户端 Socket.IO 连接地址，默认 `http://localhost:3001` |
-
-### 4. 初始化数据库
-
-```bash
+# 编辑 .env 填入数据库密码、Redis 地址等
 pnpm db:deploy
 ```
 
-> 该命令只应用仓库中已有的 Prisma migration，保留数据库迁移历史。不要在共享或远程数据库上使用 `db push`。
-
-### 5. 启动开发服务器
-
-**需要同时运行两个进程：**
+### 2. 启动（需要三个终端）
 
 ```bash
-# 终端 1：Next.js 开发服务器（端口 3000）
-pnpm dev
+# 终端 1：Fastify API（端口 4000）
+pnpm dev:api
 
-# 终端 2：Socket.IO 实时服务（端口 3001）
+# 终端 2：Socket.IO（端口 3001）
 pnpm socket
-```
 
-> ⚠️ **常见问题**：如果只运行 `pnpm dev`，广场页面会因 Socket.IO 未启动而无法连接实时功能。
+# 终端 3：Next.js 前端（端口 3000）
+pnpm dev
+```
 
 访问 `http://localhost:3000`。
 
-### 其他常用命令
+### 常用命令
 
-| 命令               | 说明                                                |
-| ------------------ | --------------------------------------------------- |
-| `pnpm db:generate` | 重新生成 Prisma Client                              |
-| `pnpm db:deploy`   | 应用仓库中已有的数据库迁移                          |
-| `pnpm db:studio`   | 打开 Prisma Studio 可视化查看数据                   |
-| `pnpm socket`      | 启动 Socket.IO 实时服务（广场实时在线、排行榜推送） |
-| `pnpm build`       | 生产构建                                            |
+| 命令 | 说明 |
+|------|------|
+| `pnpm dev` | 启动 Next.js 前端 |
+| `pnpm dev:api` | 启动 Fastify API |
+| `pnpm socket` | 启动 Socket.IO |
+| `pnpm build` | 构建 Next.js 前端 |
+| `pnpm build:api` | 编译 Fastify API |
+| `pnpm db:generate` | 重新生成 Prisma Client |
+| `pnpm db:deploy` | 应用数据库迁移 |
+| `pnpm db:studio` | Prisma Studio 可视化管理 |
 
-## 项目结构
+## 部署
 
+详见 [docs/deploy.md](docs/deploy.md)。
+
+快速步骤：
+```bash
+cp .env.production.example .env.production
+# 编辑填入生产环境配置
+docker network create pixel-net
+docker network connect pixel-net mysql-pixel
+docker network connect pixel-net redis
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 ```
-├── app/              # Next.js App Router 页面
-├── components/       # React 组件
-├── prisma/           # Prisma schema 与数据库迁移
-├── public/           # 静态资源（图片、字体等）
-├── server/           # Socket.IO 服务端
-├── docs/             # 设计文档
-└── infra/            # 部署与运维配置
-```
+
+## 文档
+
+- [01-需求文档](docs/01-requirements.md)
+- [02-前端设计](docs/02-frontend-design.md)
+- [03-后端设计](docs/03-backend-design.md)
+- [04-数据库设计](docs/04-database-design.md)
+- [05-广场实时方案](docs/05-plaza-realtime-plan.md)
+- [06-代码风格](docs/06-code-style.md)
+- [07-Fastify 项目结构与规范](docs/07-fastify-project-structure.md)
+- [部署指南](docs/deploy.md)

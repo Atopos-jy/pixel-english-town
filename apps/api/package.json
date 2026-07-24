@@ -1,0 +1,31 @@
+{
+  "name": "@pixel-english-town/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @pixel-english-town/contracts build && tsx watch src/server.ts",
+    "build": "pnpm --filter @pixel-english-town/contracts build && tsc --project tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "pnpm --filter @pixel-english-town/contracts build && tsc --noEmit --project tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/cors": "^11.3.0",
+    "@fastify/helmet": "^13.1.0",
+    "@fastify/jwt": "^10.2.0",
+    "@fastify/multipart": "^9.4.0",
+    "@pixel-english-town/contracts": "workspace:*",
+    "@prisma/client": "^5.22.0",
+    "ali-oss": "^6.23.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.10.0",
+    "ioredis": "^5.11.1",
+    "jose": "^6.2.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.27",
+    "tsx": "^4.23.1"
+  }
+}

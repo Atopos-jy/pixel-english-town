@@ -26,8 +26,26 @@ model User {
   quizGenerationJobs QuizGenerationJob[]
   articleCompletions ArticleCompletion[]
   plazaActivities PlazaActivity[]
+  sessions           UserSession[]
   
   @@map("users")
+}
+
+model UserSession {
+  id         String    @id @default(cuid())
+  userId     String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  userAgent  String?   @db.VarChar(500)
+  ipHash     String?   @db.VarChar(64)
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+  @@map("user_sessions")
 }
 
 // 用户进度模型（存储用户的学习统计和完成记录）

@@ -12,7 +12,7 @@
 
 ## 2. 当前登录页约定
 
-- 登录场景背景使用 `public/images/come-background-v1.png`。
+- 登录场景背景使用 `apps/web/public/images/home/come-background.png`。
 - 未登录点击“点击进入小镇”后：场景上滑并停在顶部，下方页面变为完整登录/注册输入区。
 - 已登录用户点击入口后直接进入 `/town`。
 - 首页文案使用：

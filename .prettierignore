@@ -1,7 +1,7 @@
 node_modules
 .next
 coverage
-public/images
+apps/web/public/images
 prisma/migrations
 *.png
 pnpm-lock.yaml
